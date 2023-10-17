@@ -1,0 +1,22 @@
+# name: TEST DISPATCH EVENT FROM BOT
+
+# on:
+#   repository_dispatch:
+#     types: [on-demand-test via REST]
+#   # tweet manually in case automation failed us
+#   workflow_dispatch:
+#     inputs:
+#       version:
+#         description: "TEST BOT DISPATCH"
+#         required: true
+
+# jobs:
+#   update:
+#     runs-on: ubuntu-latest
+#     steps:
+#       # unify version from different triggers
+#       # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+#       - run: echo "TEST DISPATCH FROM ANSIBLE LIGHTSPEED BOT"
+#         if: github.event_name == 'repository_dispatch'
+#       - run: echo "TEST DISPATCH FROM ANSIBLE LIGHTSPEED BOT over SANDBOX REPO"
+#         if: github.event_name == 'workflow_dispatch'

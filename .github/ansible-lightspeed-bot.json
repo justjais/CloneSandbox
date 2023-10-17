@@ -1,0 +1,9 @@
+{
+	"ansibleLint": {
+		"configFile": ".ansible-lint.yml"
+	},
+	"schedule": {
+		"interval": "daily"
+	},
+	"open-pull-requests-limit": 3
+}
