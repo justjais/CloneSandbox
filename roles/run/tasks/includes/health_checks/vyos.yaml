@@ -1,7 +1,7 @@
 ---
 - name: Parse bgp summary
   cli_parse:
-    command: "show ip bgp summary"
+    command: show ip bgp summary
     parser:
       name: ansible.netcommon.content_templates
     set_fact: bgp_health
