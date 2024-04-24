@@ -7,6 +7,6 @@
      health_checks: "{{ bgp_health | network.bgp.health_check_view(operation) }}"
 
 - name: BGP health checks
-  ansible.builtin.debug:
+  debug:
      var: health_checks
   failed_when: "'unsuccessful' == health_checks.status"
