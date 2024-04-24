@@ -3,7 +3,7 @@
   ansible.builtin.include_tasks: includes/resources.yaml
 
 - name: Invoke gather function
-  ansible.builtin.include_role:
+  include_role:
     name: network.base.resource_manager
   vars:
     operation: 'gather'
