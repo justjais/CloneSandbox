@@ -1,6 +1,6 @@
 ---
 - name: Invoke configure function
-  include_role:
+  ansible.builtin.include_role:
     name: network.base.resource_manager
   vars:
-    operation: 'configure'
+    operation: configure
