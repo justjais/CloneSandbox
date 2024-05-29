@@ -2,7 +2,7 @@
 # Test comment 1
 - name: Include tasks
   # Test comment 2
-  include_tasks: includes/{{ operation.name }}.yaml          # Test comment 3
   loop: "{{ operations }}"
   loop_control:
     loop_var: operation
+  ansible.builtin.include_tasks: includes/{{ operation.name }}.yaml
