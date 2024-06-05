@@ -1,5 +1,5 @@
 - name: 'telegraf: systemctl restart telegraf.service'
-  ansible.builtin.systemd:
+  systemd:
     name: 'telegraf.service'
     state: 'restarted'
   when:
