@@ -1,14 +1,16 @@
 ---
 - name: Check User Privileges when auth_token is defined
-  ilo_manage:
-    category: Systems
-    command: CheckUserPrivileges
-    baseuri: "{{ baseuri }}"
-    auth_token: "{{ auth_token }}"
-    required_permissions: "{{ required_permissions | default(['HostBIOSConfigPriv', 'HostNICConfigPriv', 'HostStorageConfigPriv']) }}"
-  register: result
+  block:
+    - ilo_manage:
+        category: Systems
+        command: CheckUserPrivileges
+        baseuri: "{{ baseuri }}"
+        auth_token: "{{ auth_token }}"
+        required_permissions: "{{ required_permissions | default(['HostBIOSConfigPriv', 'HostNICConfigPriv', 'HostStorageConfigPriv']) }}"
+      register: result
 
-- name: User Privileges Status
-  debug:
-    msg: "{{ result }}"
+    - name: User Privileges Status
+      debug:
+        msg: "{{ result }}"
+
   when: auth_token is defined
