@@ -1,26 +1,12 @@
 ---
-- hosts: myhosts
-  connection: local
-  gather_facts: False
-  tasks:
-    - name: Validate server authentication input provided by user
-      fail:
-        msg: "auth_token is mandatory"
-      when:
-        - (auth_token is not defined)
+- name: Define timestamp
+  set_fact: timestamp="{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
+  run_once: true
 
-    - name: Check User Privileges when auth_token is defined
-      block:
-        - ilo_manage:
-            category: Systems
-            command: CheckUserPrivileges
-            baseuri: "{{ baseuri }}"
-            auth_token: "{{ auth_token }}"
-            required_permissions: "{{ required_permissions | default(['HostBIOSConfigPriv', 'HostNICConfigPriv', 'HostStorageConfigPriv']) }}"
-          register: result
+- name: Define file to place results
+  set_fact: template={{rootdir}}/{{host}}/{{host}}_{{datatype}}_{{timestamp}}
 
-        - name: User Privileges Status
-          debug:
-            msg: "{{ result }}"
-
-      when: auth_token is defined
+- name: Create dropoff directory for host
+  file:
+    path: "{{ rootdir }}/{{ host }}"
+    state: directory
