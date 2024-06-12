@@ -1,6 +1,7 @@
-- name: 'telegraf: systemctl restart telegraf.service'
+---
+- name: "telegraf: systemctl restart telegraf.service"
   systemd:
-    name: 'telegraf.service'
-    state: 'restarted'
+    name: telegraf.service
+    state: restarted
   when:
-    - 'telegraf__service_state_result is not changed'
+    - telegraf__service_state_result is not changed
