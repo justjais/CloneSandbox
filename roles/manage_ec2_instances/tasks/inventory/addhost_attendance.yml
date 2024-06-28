@@ -4,12 +4,12 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_attendance": "{{ec2_name_prefix}}-attendance"
+      tag:Workshop_attendance: "{{ec2_name_prefix}}-attendance"
   register: attendance_host_facts
 
 - name: Add attendance instance to host group
   add_host:
-    hostname: 'attendance-host'
+    hostname: attendance-host
     short_name: "{{ item.tags.short_name }}"
     username: "{{ item.tags.username }}"
     ansible_user: "{{ item.tags.username }}"

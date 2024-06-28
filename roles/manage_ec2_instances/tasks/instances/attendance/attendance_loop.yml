@@ -25,4 +25,3 @@
 
     - name: Loop back via include on this file
       ansible.builtin.include_tasks: attendance_loop.yml
-...

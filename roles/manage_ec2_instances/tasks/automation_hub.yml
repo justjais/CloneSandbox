@@ -3,14 +3,14 @@
   when: not pre_build|bool
   block:
     - name: set ami for hub host
-      import_tasks: 'ami_find/ami_find_hub.yml'
+      import_tasks: ami_find/ami_find_hub.yml
 
 - name: save ami for ansible hub node pre_build
   when: pre_build|bool
-  import_tasks: 'ami_find/ami_find_hub_prebuild.yml'
+  import_tasks: ami_find/ami_find_hub_prebuild.yml
 
 - name: create automation hub host
-  import_tasks: 'instances/instances_automation_hub.yml'
+  import_tasks: instances/instances_automation_hub.yml
 
 - name: configure automation hub inventory
-  import_tasks: 'inventory/addhost_automation_hub.yml'
+  import_tasks: inventory/addhost_automation_hub.yml

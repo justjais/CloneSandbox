@@ -10,7 +10,7 @@
     user_data: "{{ lookup('template', 'gaia-mgmt-ftw-user-data.sh.j2') }}"
     state: running
     filters:
-      "tag:Workshop_checkpoint_mgmt": "{{ ec2_name_prefix }}-checkpoint"
+      tag:Workshop_checkpoint_mgmt: "{{ ec2_name_prefix }}-checkpoint"
       instance-state-name: running
     tags:
       Workshop_checkpoint_mgmt: "{{ ec2_name_prefix }}-checkpoint"
@@ -18,11 +18,11 @@
       Workshop_type: "{{ workshop_type }}"
       AWS_USERNAME: "{{ aws_user }}"
       owner: "{{ aws_user }}"
-      Info: "AWS_USERNAME that provisioned this-> {{ aws_user }}"
-      Ansible_Workshops: "This was provisioned through the ansible workshops provisioner"
+      Info: AWS_USERNAME that provisioned this-> {{ aws_user }}
+      Ansible_Workshops: This was provisioned through the ansible workshops provisioner
       Students: "{{ student_total|int }}"
       username: "{{ ec2_info['checkpoint_mgmt']['username'] }}"
-      short_name: "checkpoint_mgmt"
+      short_name: checkpoint_mgmt
       ansible-workshops: "true"
     wait: "{{ ec2_wait }}"
     network:
@@ -31,4 +31,3 @@
   async: "{{ async_timeout_seconds }}"
   poll: 0
   register: checkpoint_mgmt_async
-...

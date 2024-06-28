@@ -1,32 +1,28 @@
 ---
 ################### Get workshop nodes info ###################
-
 - name: grab facts for Gitlab
   amazon.aws.ec2_instance_info:
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_gitlab": "{{ec2_name_prefix}}-gitlab"
+      tag:Workshop_gitlab: "{{ec2_name_prefix}}-gitlab"
   register: gitlab_node_facts
 
 ################### Create inventories ###################
 
 - name: GitLab | Add new instance to host group
-  add_host:
-    hostname: 'gitlab'
+  ansible.builtin.add_host:
+    hostname: gitlab
     short_name: "{{ item.tags.short_name }}"
     username: "{{ item.tags.username }}"
     ansible_user: "{{ item.tags.username }}"
     ansible_ssh_private_key_file: "{{ playbook_dir }}/{{ ec2_name_prefix }}/{{ ec2_name_prefix }}-private.pem"
     ansible_host: "{{ item.public_ip_address }}"
     private_ip: "{{ item.private_ip_address }}"
-    groups:
-      - rhel
-      - gitlab
-  with_items: "{{ gitlab_node_facts.instances }}"
+    groups: "{{ gitlab_node_facts.instances }}"
 
 - name: Ensure group automation_hub is removed
-  group:
+  ansible.builtin.group:
     name: automation_hub
     state: absent
 
@@ -35,7 +31,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_automation-hub": "{{ec2_name_prefix}}-automation-hub"
+      tag:Workshop_automation-hub: "{{ec2_name_prefix}}-automation-hub"
   register: generic_hub_host_facts
 
 - name: grab facts for hub host
@@ -43,7 +39,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_automation-hub": "{{ec2_name_prefix}}-automationhub"
+      tag:Workshop_automation-hub: "{{ec2_name_prefix}}-automationhub"
   register: automation_hub_host_facts
 
 - name: destroy EC2 instances for generic hub node
@@ -56,7 +52,7 @@
   register: result_ec2_destroy
 
 - name: Add automation hub instance to host group
-  add_host:
+  ansible.builtin.add_host:
     hostname: "{{ item.tags.Name }}"
     student: "{{ item.tags.Student }}"
     short_name: "{{ item.tags.short_name }}"
@@ -65,9 +61,8 @@
     ansible_ssh_private_key_file: "{{ playbook_dir }}/{{ ec2_name_prefix }}/{{ ec2_name_prefix }}-private.pem"
     ansible_host: "{{ item.public_ip_address }}"
     private_ip: "{{ item.private_ip_address }}"
-    groups: automation_hub
-  with_items: "{{ automation_hub_host_facts.instances }}"
+    groups: "{{ automation_hub_host_facts.instances }}"
 
 - name: debug facts for hub
-  debug:
+  ansible.builtin.debug:
     msg: "{{ automation_hub_host_facts }}"

@@ -9,7 +9,7 @@
     exact_count: "{{ student_total|int }}"
     state: running
     filters:
-      "tag:Workshop_qradar": "{{ ec2_name_prefix }}-qradar"
+      tag:Workshop_qradar: "{{ ec2_name_prefix }}-qradar"
       instance-state-name: running
     tags:
       Workshop_qradar: "{{ ec2_name_prefix }}-qradar"
@@ -17,11 +17,11 @@
       Workshop_type: "{{ workshop_type }}"
       AWS_USERNAME: "{{ aws_user }}"
       owner: "{{ aws_user }}"
-      Info: "AWS_USERNAME that provisioned this-> {{ aws_user }}"
-      Ansible_Workshops: "This was provisioned through the ansible workshops provisioner"
+      Info: AWS_USERNAME that provisioned this-> {{ aws_user }}
+      Ansible_Workshops: This was provisioned through the ansible workshops provisioner
       Students: "{{ student_total|int }}"
       username: '{{ ec2_info["qradar"]["username"] }}'
-      short_name: "qradar"
+      short_name: qradar
       ansible-workshops: "true"
     wait: "{{ ec2_wait }}"
     network:
@@ -39,4 +39,3 @@
   async: "{{ async_timeout_seconds }}"
   poll: 0
   register: qradar_async
-...
