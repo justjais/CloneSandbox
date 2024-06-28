@@ -5,8 +5,7 @@
 
 - name: Initialize/reset list count
   ansible.builtin.set_fact:
-    list_count: "reset"
+    list_count: reset
 
 - name: Call CentOS 7 retry tasks include
   ansible.builtin.include_tasks: centos_7/centos_7_loop.yml
-...

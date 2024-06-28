@@ -4,9 +4,9 @@ ec2_region: us-east-1
 ec2_wait: true
 # need to circle back and fix this for teardown - sean
 ec2_az: "{{ec2_region}}a"
-ec2_subnet: "172.16.0.0/16"
-ec2_subnet2: "172.17.0.0/16"
-ec2_network_vpc2: "172.18.0.0/16"
+ec2_subnet: 172.16.0.0/16
+ec2_subnet2: 172.17.0.0/16
+ec2_network_vpc2: 172.18.0.0/16
 ssh_port: 22
 create_cluster: false
 ## The default is multivendor, 1 x Cisco, 2 x Arista, 1 x Juniper
@@ -16,19 +16,19 @@ create_cluster: false
 ##    |           |
 ##  (rtr3)  -   (rtr4)
 ##
-control_type: "rhel9-controller"
-hub_type: "private_automation_hub"
-rtr1_type: "cisco"
-rtr2_type: "arista"
-rtr3_type: "juniper"
-rtr4_type: "arista"
-rhel: "rhel8"
+control_type: rhel9-controller
+hub_type: private_automation_hub
+rtr1_type: cisco
+rtr2_type: arista
+rtr3_type: juniper
+rtr4_type: arista
+rhel: rhel8
 # additional info needed by AWS ec2 modules
 ec2_info:
   control_type_pre_build:
     owners: 962147768365
     architecture: x86_64
-    filter: 'automation_controller*'
+    filter: automation_controller*
     # username: ec2-user
     # size:
     #   - m5a.xlarge
@@ -47,14 +47,14 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-9*HVM-*Hourly*'
+    filter: RHEL-9*HVM-*Hourly*
     username: ec2-user
   juniper:
     size: c5.xlarge
     ami: "{{ juniper_ami | default(omit) }}"
     os: junos
     username: ec2-user
-    filter: "junos-vsrx3-x86-64-22.3R2*byol*"
+    filter: junos-vsrx3-x86-64-22.3R2*byol*
     volume:
       - device_name: /dev/sda1
         ebs:
@@ -73,7 +73,7 @@ ec2_info:
           volume_type: gp3
           iops: 1000
           throughput: 125
-          volume_size: 16      
+          volume_size: 16
           delete_on_termination: true
   arista:
     size: c5.xlarge
@@ -90,7 +90,7 @@ ec2_info:
           volume_size: 8
   checkpoint_mgmt:
     owners: 679593333241
-    filter: 'Check Point CloudGuard IaaS BYOL*R80.40*'
+    filter: Check Point CloudGuard IaaS BYOL*R80.40*
     architecture: x86_64
     size:
       - m5.xlarge
@@ -100,14 +100,14 @@ ec2_info:
     username: admin
   checkpoint_gw:
     owners: 679593333241
-    filter: 'Check Point CloudGuard IaaS GW*BYOL*R80.40*'
+    filter: Check Point CloudGuard IaaS GW*BYOL*R80.40*
     architecture: x86_64
     size: c5.large
     ami: "{{ checkpoint_gw_ami| default(omit) }}"
     username: admin
   windows_ws:
     owners: 679593333241
-    filter: 'Windows_Server-2016-English-Full-Base*'
+    filter: Windows_Server-2016-English-Full-Base*
     size:
       - m5.xlarge
       - m6i.xlarge
@@ -130,7 +130,7 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-9*HVM-*Hourly*'
+    filter: RHEL-9*HVM-*Hourly*
     username: ec2-user
   rhel8-tower:
     owners: 309956199498
@@ -143,7 +143,7 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-8*HVM-*Hourly*'
+    filter: RHEL-8*HVM-*Hourly*
     username: ec2-user
   rhel9:
     owners: 309956199498
@@ -156,7 +156,7 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-9*HVM-*Hourly*'
+    filter: RHEL-9*HVM-*Hourly*
     username: ec2-user
   rhel8:
     owners: 309956199498
@@ -169,7 +169,7 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-8*HVM-*Hourly*'
+    filter: RHEL-8*HVM-*Hourly*
     username: ec2-user
   rhel7:
     owners: 309956199498
@@ -182,9 +182,9 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-7.9_HVM*'
+    filter: RHEL-7.9_HVM*
     username: ec2-user
-    python_interpreter: '/usr/bin/python'
+    python_interpreter: /usr/bin/python
   rhel68:
     owners: 309956199498
     size: t2.medium
@@ -194,9 +194,9 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-6.8_HVM_GA*'
+    filter: RHEL-6.8_HVM_GA*
     username: ec2-user
-    python_interpreter: '/usr/bin/python'
+    python_interpreter: /usr/bin/python
   centos78:
     owners: 125523088429
     size:
@@ -208,9 +208,9 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'CentOS*7.8*x86_64'
+    filter: CentOS*7.8*x86_64
     username: centos
-    python_interpreter: '/usr/bin/python'
+    python_interpreter: /usr/bin/python
   centos79:
     owners: 125523088429
     size:
@@ -222,9 +222,9 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'CentOS*7*x86_64*'
+    filter: CentOS*7*x86_64*
     username: centos
-    python_interpreter: '/usr/bin/python'
+    python_interpreter: /usr/bin/python
   f5node:
     owners: 679593333241
     size:
@@ -237,7 +237,7 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'F5 BIGIP-16.*PAYG-Best 25Mbps*'
+    filter: F5 BIGIP-16.*PAYG-Best 25Mbps*
     username: admin
   splunk_enterprise:
     owners: 309956199498
@@ -251,9 +251,9 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-7.7_HVM_GA-20190723-x86_64-1-Access2-GP2'
+    filter: RHEL-7.7_HVM_GA-20190723-x86_64-1-Access2-GP2
     username: ec2-user
-    python_interpreter: '/usr/bin/python'
+    python_interpreter: /usr/bin/python
   netapp:
     owners: 679593333241
     size:
@@ -263,7 +263,7 @@ ec2_info:
     os_type: linux
     disk_space: 10
     architecture: x86_64
-    filter: 'OnCommand_Cloud_Manager_3.7.0_Marketplace*'
+    filter: OnCommand_Cloud_Manager_3.7.0_Marketplace*
     username: ec2-user
   qradar:
     owners: 721066863947
@@ -277,26 +277,26 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'AnsibleSecurity-QRadarCE*'
+    filter: AnsibleSecurity-QRadarCE*
     username: ec2-user
-    python_interpreter: '/usr/bin/python'
+    python_interpreter: /usr/bin/python
   skylight_windows_ws:
-    filter: 'Windows_Server-2016-English-Full-Base*'
+    filter: Windows_Server-2016-English-Full-Base*
     size: t3.medium
   skylight_windows_instance:
-    filter: 'Windows_Server-2019-English-Core-Base*'
+    filter: Windows_Server-2019-English-Core-Base*
     size: t3.medium
     disk_volume_type: gp3
     disk_space: 30
     disk_iops: 3000
     disk_throughput: 125
   skylight_rhel7_gitlab:
-    filter: 'RHEL-7.6_HVM_GA*x86_64*'
+    filter: RHEL-7.6_HVM_GA*x86_64*
     size: t2.xlarge
     username: ec2-user
   skylight_rhel8_gitlab:
     owners: 309956199498
-    filter: 'RHEL-8*HVM-*Hourly*'
+    filter: RHEL-8*HVM-*Hourly*
     size: t2.xlarge
     username: ec2-user
     architecture: x86_64
@@ -315,7 +315,7 @@ ec2_info:
     disk_iops: 3000
     disk_throughput: 125
     architecture: x86_64
-    filter: 'RHEL-8*HVM-*Hourly*'
+    filter: RHEL-8*HVM-*Hourly*
     username: ec2-user
   satellite:
     owners: 551178754270
@@ -337,14 +337,12 @@ ec2_info:
     os_type: linux
     disk_space: 20
     architecture: x86_64
-    filter: 'RHEL-8*HVM-*Hourly*'
+    filter: RHEL-8*HVM-*Hourly*
     username: ec2-user
 debug_teardown: false
 
 # Issue #1594
-ansible_async_dir: "/tmp/.ansible_async"
-
-
+ansible_async_dir: /tmp/.ansible_async
 
 # pre_build_controller_ami:
 #   ap-northeast-1: ami-06ad1ea5c12a0d0f7
@@ -356,7 +354,7 @@ ansible_async_dir: "/tmp/.ansible_async"
 #   us-east-2: ami-0ef29e3299cf26819
 #   us-west-1: ami-0009710aa9b69790e
 #   us-west-2: ami-0b0d02e3c1d09fd4c
-  
+
 pre_build_hub_ami:
   ap-northeast-1: ami-0e10c305c74ebe2c4
   ap-southeast-1: ami-0b8c588fe02c19ce6

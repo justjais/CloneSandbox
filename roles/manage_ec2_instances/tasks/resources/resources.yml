@@ -9,8 +9,8 @@
     region: "{{ ec2_region }}"
     tags:
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       Workshop_type: "{{ workshop_type }}"
       Workshop: "{{ ec2_name_prefix }}"
@@ -37,8 +37,8 @@
     vpc_id: "{{create_vpc.vpc.id}}"
     tags:
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       Workshop_type: "{{ workshop_type }}"
       Workshop: "{{ ec2_name_prefix }}"
@@ -46,7 +46,7 @@
     rules: "{{ all_rules }}"
     rules_egress:
       - proto: all
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
   register: create_sg
   until: create_sg is not failed
   retries: 5
@@ -61,8 +61,8 @@
     resource_tags:
       Name: "{{ ec2_name_prefix }}-subnet"
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       Workshop_type: "{{ workshop_type }}"
       Workshop: "{{ ec2_name_prefix }}"
@@ -81,8 +81,8 @@
     resource_tags:
       Name: "{{ ec2_name_prefix }}-subnet2"
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       Workshop_type: "{{ workshop_type }}"
       Workshop: "{{ ec2_name_prefix }}"
@@ -97,9 +97,9 @@
     vpc_id: "{{ create_vpc.vpc.id }}"
     tags:
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
-      Students: "Total {{ student_total|int }}"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
+      Students: Total {{ student_total|int }}
       Workshop_type: "{{ workshop_type }}"
       Workshop: "{{ ec2_name_prefix }}"
       ansible-workshops: "true"
@@ -114,12 +114,12 @@
     subnets:
       - "{{ create_subnet.subnet.id }}"
     routes:
-      - dest: 0.0.0.0/0
+      - dest: "0.0.0.0/0"
         gateway_id: "{{ igw.gateway_id }}"
     tags:
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       Workshop_type: "{{ workshop_type }}"
       Workshop: "{{ ec2_name_prefix }}"
@@ -145,7 +145,7 @@
   copy:
     content: "{{ create_key.key.private_key }}"
     dest: "{{ playbook_dir }}/{{ ec2_name_prefix }}/{{ ec2_name_prefix }}-private.pem"
-    mode: '0400'
+    mode: "0400"
   when: create_key.changed
 
 - name: use {{ dns_type }} storage for key
@@ -154,7 +154,7 @@
 - name: Ensure key file has proper permissions
   file:
     dest: "{{ playbook_dir }}/{{ ec2_name_prefix }}/{{ ec2_name_prefix }}-private.pem"
-    mode: 0600
+    mode: "0600"
 
 - name: debugging all variables for ec2 instance creation VPC-1
   debug:

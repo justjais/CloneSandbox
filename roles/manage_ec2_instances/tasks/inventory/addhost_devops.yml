@@ -4,8 +4,8 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop": "{{ec2_name_prefix}}"
-      "tag:Devops_tag": "dev_web1"
+      tag:Workshop: "{{ec2_name_prefix}}"
+      tag:Devops_tag: dev_web1
   register: node1_node_facts
 
 - name: grab facts for node2 node - dev_web2
@@ -13,8 +13,8 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop": "{{ec2_name_prefix}}"
-      "tag:Devops_tag": "dev_web2"
+      tag:Workshop: "{{ec2_name_prefix}}"
+      tag:Devops_tag: dev_web2
   register: node2_node_facts
 
 - name: grab facts for node3 node - prod_web1
@@ -22,8 +22,8 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop": "{{ec2_name_prefix}}"
-      "tag:Devops_tag": "prod_web1"
+      tag:Workshop: "{{ec2_name_prefix}}"
+      tag:Devops_tag: prod_web1
   register: node3_node_facts
 
 - name: grab facts for node4 node - prod_web2
@@ -31,8 +31,8 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop": "{{ec2_name_prefix}}"
-      "tag:Devops_tag": "prod_web2"
+      tag:Workshop: "{{ec2_name_prefix}}"
+      tag:Devops_tag: prod_web2
   register: node4_node_facts
 
 - name: add hosts to site1  group

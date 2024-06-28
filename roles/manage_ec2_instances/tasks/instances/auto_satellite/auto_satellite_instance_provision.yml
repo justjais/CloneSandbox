@@ -12,7 +12,7 @@
     state: running
     filters:
       instance-state-name: running
-      "tag:Workshop_satellite": "{{ ec2_name_prefix }}-satellite"
+      tag:Workshop_satellite: "{{ ec2_name_prefix }}-satellite"
     tags:
       Workshop_satellite: "{{ ec2_name_prefix }}-satellite"
       Workshop: "{{ ec2_name_prefix }}"
@@ -21,10 +21,10 @@
       Workshop_type: "{{ workshop_type }}"
       AWS_USERNAME: "{{ aws_user }}"
       owner: "{{ aws_user }}"
-      Info: "AWS_USERNAME that provisioned this-> {{ aws_user }}"
-      Ansible_Workshops: "This was provisioned through the ansible workshops provisioner"
+      Info: AWS_USERNAME that provisioned this-> {{ aws_user }}
+      Ansible_Workshops: This was provisioned through the ansible workshops provisioner
       Students: "{{ student_total|int }}"
-      short_name: "satellite"
+      short_name: satellite
       username: "{{ ec2_info[rhel].username }}"
       ansible-workshops: "true"
     wait: "{{ ec2_wait }}"
@@ -38,4 +38,3 @@
           throughput: "{{ ec2_info['satellite'].disk_throughput }}"
           delete_on_termination: true
     ebs_optimized: "{{ ebs_optimized_capable | default(false) }}"
-...

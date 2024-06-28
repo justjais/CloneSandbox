@@ -19,7 +19,7 @@
 
 - name: Initialize/reset list count
   ansible.builtin.set_fact:
-    list_count: "reset"
+    list_count: reset
 
 - name: Call Satellite retry tasks include
   ansible.builtin.include_tasks: auto_satellite/auto_satellite_loop.yml
@@ -29,7 +29,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_satellite": "{{ ec2_name_prefix }}-satellite"
+      tag:Workshop_satellite: "{{ ec2_name_prefix }}-satellite"
   register: satellite_output
 
 - name: Ensure tags are present for satellite
@@ -40,7 +40,7 @@
     tags:
       Name: "{{ ec2_name_prefix }}-student{{ item.0 + 1 }}-satellite"
       Index: "{{ item[0] }}"
-      Student: "student{{ item.0 + 1 }}"
+      Student: student{{ item.0 + 1 }}
       launch_time: "{{ item.1.launch_time }}"
   with_indexed_items:
     - "{{ satellite_output.instances }}"
@@ -59,4 +59,3 @@
 - name: provision aws centos 7 instances
   include_tasks: instances_centos_7.yml
   when: (centos7 is defined) and (centos7 is not none)
-...

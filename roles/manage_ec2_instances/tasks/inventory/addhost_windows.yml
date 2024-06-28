@@ -6,7 +6,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_gitlab": "{{ec2_name_prefix}}-gitlab"
+      tag:Workshop_gitlab: "{{ec2_name_prefix}}-gitlab"
   register: gitlab_node_facts
 
 - name: grab facts for instance 1
@@ -14,7 +14,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_instance1": "{{ec2_name_prefix}}-instance1"
+      tag:Workshop_instance1: "{{ec2_name_prefix}}-instance1"
   register: instance1_node_facts
 
 - name: grab facts for instance 2
@@ -22,7 +22,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_instance2": "{{ec2_name_prefix}}-instance2"
+      tag:Workshop_instance2: "{{ec2_name_prefix}}-instance2"
   register: instance2_node_facts
   when:
     - doubleup|bool
@@ -31,7 +31,7 @@
 
 - name: Windows | Obtain windows passwords for instance1
   community.aws.ec2_win_password:
-    region: '{{ ec2_region }}'
+    region: "{{ ec2_region }}"
     instance_id: "{{ item.instance_id }}"
     key_file: "{{ playbook_dir }}/{{ ec2_name_prefix }}/{{ ec2_name_prefix }}-private.pem"
     wait: true
@@ -42,7 +42,7 @@
 
 - name: Windows | Obtain windows passwords for instance2
   community.aws.ec2_win_password:
-    region: '{{ ec2_region }}'
+    region: "{{ ec2_region }}"
     instance_id: "{{ item.instance_id }}"
     key_file: "{{ playbook_dir }}/{{ ec2_name_prefix }}/{{ ec2_name_prefix }}-private.pem"
     wait: true
@@ -57,7 +57,7 @@
 
 - name: GitLab | Add new instance to host group
   add_host:
-    hostname: 'gitlab'
+    hostname: gitlab
     short_name: "{{ item.tags.short_name }}"
     username: "{{ item.tags.username }}"
     ansible_user: "{{ item.tags.username }}"
@@ -71,17 +71,17 @@
 
 - name: Windows instance1 | Add new instance to host group
   add_host:
-    hostname: "student{{ item.item.tags.Student | regex_replace('[^0-9]', '') }}-win1"
+    hostname: student{{ item.item.tags.Student | regex_replace('[^0-9]', '') }}-win1
     short_name: "{{ item.item.tags.short_name }}"
     ansible_host: "{{ item.item.public_ip_address }}"
     private_ip: "{{ item.item.private_ip_address }}"
     ansible_port: 5986
-    ansible_user: "Administrator"
+    ansible_user: Administrator
     ansible_password: "{{ item.win_password }}"
     ansible_become_password: "{{ admin_password }}"
-    ansible_connection: "winrm"
-    ansible_winrm_transport: "ntlm"
-    ansible_winrm_server_cert_validation: "ignore"
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+    ansible_winrm_server_cert_validation: ignore
     ansible_winrm_operation_timeout_sec: 120
     ansible_winrm_read_timeout_sec: 150
     student: "{{ item.item.tags.Student | regex_replace('[^0-9]', '') }}"
@@ -92,17 +92,17 @@
 
 - name: Windows instance2 | Add new instance to host group
   add_host:
-    hostname: "student{{ item.item.tags.Student | regex_replace('[^0-9]', '') }}-win2"
+    hostname: student{{ item.item.tags.Student | regex_replace('[^0-9]', '') }}-win2
     short_name: "{{ item.item.tags.short_name }}"
     ansible_host: "{{ item.item.public_ip_address }}"
     private_ip: "{{ item.item.private_ip_address }}"
     ansible_port: 5986
-    ansible_user: "Administrator"
+    ansible_user: Administrator
     ansible_password: "{{ item.win_password }}"
     ansible_become_password: "{{ admin_password }}"
-    ansible_connection: "winrm"
-    ansible_winrm_transport: "ntlm"
-    ansible_winrm_server_cert_validation: "ignore"
+    ansible_connection: winrm
+    ansible_winrm_transport: ntlm
+    ansible_winrm_server_cert_validation: ignore
     ansible_winrm_operation_timeout_sec: 120
     ansible_winrm_read_timeout_sec: 150
     student: "{{ item.item.tags.Student | regex_replace('[^0-9]', '') }}"

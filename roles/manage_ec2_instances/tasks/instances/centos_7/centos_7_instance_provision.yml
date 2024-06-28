@@ -12,7 +12,7 @@
     state: running
     filters:
       instance-state-name: running
-      "tag:Workshop_node4": "{{ ec2_name_prefix }}-node4"
+      tag:Workshop_node4: "{{ ec2_name_prefix }}-node4"
     tags:
       Workshop_node4: "{{ ec2_name_prefix }}-node4"
       Workshop: "{{ ec2_name_prefix }}"
@@ -21,10 +21,10 @@
       Workshop_type: "{{ workshop_type }}"
       AWS_USERNAME: "{{ aws_user }}"
       owner: "{{ aws_user }}"
-      Info: "AWS_USERNAME that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: AWS_USERNAME that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
-      short_name: "node4"
+      short_name: node4
       username: "{{ ec2_info[centos7].username }}"
       ansible-workshops: "true"
     wait: "{{ ec2_wait }}"
@@ -43,7 +43,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_node4": "{{ ec2_name_prefix }}-node4"
+      tag:Workshop_node4: "{{ ec2_name_prefix }}-node4"
   register: node4_output
 
 - name: Ensure tags are present for node4
@@ -54,7 +54,7 @@
     tags:
       Name: "{{ ec2_name_prefix }}-student{{ item.0 + 1 }}-node4"
       Index: "{{ item[0] }}"
-      Student: "student{{ item.0 + 1 }}"
+      Student: student{{ item.0 + 1 }}
       launch_time: "{{ item.1.launch_time }}"
   with_indexed_items:
     - "{{ node4_output.instances }}"
@@ -64,7 +64,7 @@
   amazon.aws.ec2_instance:
     instance_ids: "{{ item.1.instance_id }}"
     region: "{{ ec2_region }}"
-    instance_role: "VPCLockDown_{{ ec2_name_prefix }}_student{{ item.0 + 1 }}"
+    instance_role: VPCLockDown_{{ ec2_name_prefix }}_student{{ item.0 + 1 }}
     state: running
     wait: true
   with_indexed_items:
@@ -90,7 +90,7 @@
     state: running
     filters:
       instance-state-name: running
-      "tag:Workshop_node5": "{{ ec2_name_prefix }}-node5"
+      tag:Workshop_node5: "{{ ec2_name_prefix }}-node5"
     tags:
       Workshop_node5: "{{ ec2_name_prefix }}-node5"
       Workshop: "{{ ec2_name_prefix }}"
@@ -99,10 +99,10 @@
       Workshop_type: "{{ workshop_type }}"
       AWS_USERNAME: "{{ aws_user }}"
       owner: "{{ aws_user }}"
-      Info: "AWS_USERNAME that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: AWS_USERNAME that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
-      short_name: "node5"
+      short_name: node5
       username: "{{ ec2_info[centos7].username }}"
       ansible-workshops: "true"
     wait: "{{ ec2_wait }}"
@@ -121,7 +121,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_node5": "{{ ec2_name_prefix }}-node5"
+      tag:Workshop_node5: "{{ ec2_name_prefix }}-node5"
   register: node5_output
 
 - name: Ensure tags are present for node5
@@ -132,7 +132,7 @@
     tags:
       Name: "{{ ec2_name_prefix }}-student{{ item.0 + 1 }}-node5"
       Index: "{{ item[0] }}"
-      Student: "student{{ item.0 + 1 }}"
+      Student: student{{ item.0 + 1 }}
       launch_time: "{{ item.1.launch_time }}"
   with_indexed_items:
     - "{{ node5_output.instances }}"
@@ -142,7 +142,7 @@
   amazon.aws.ec2_instance:
     instance_ids: "{{ item.1.instance_id }}"
     region: "{{ ec2_region }}"
-    instance_role: "VPCLockDown_{{ ec2_name_prefix }}_student{{ item.0 + 1 }}"
+    instance_role: VPCLockDown_{{ ec2_name_prefix }}_student{{ item.0 + 1 }}
     state: running
     wait: true
   with_indexed_items:
@@ -168,7 +168,7 @@
     state: running
     filters:
       instance-state-name: running
-      "tag:Workshop_node6": "{{ ec2_name_prefix }}-node6"
+      tag:Workshop_node6: "{{ ec2_name_prefix }}-node6"
     tags:
       Workshop_node6: "{{ ec2_name_prefix }}-node6"
       Workshop: "{{ ec2_name_prefix }}"
@@ -177,10 +177,10 @@
       Workshop_type: "{{ workshop_type }}"
       AWS_USERNAME: "{{ aws_user }}"
       owner: "{{ aws_user }}"
-      Info: "AWS_USERNAME that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: AWS_USERNAME that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
-      short_name: "node6"
+      short_name: node6
       username: "{{ ec2_info[centos7].username }}"
       ansible-workshops: "true"
     wait: "{{ ec2_wait }}"
@@ -199,7 +199,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_node6": "{{ ec2_name_prefix }}-node6"
+      tag:Workshop_node6: "{{ ec2_name_prefix }}-node6"
   register: node6_output
 
 - name: Ensure tags are present for node6
@@ -210,7 +210,7 @@
     tags:
       Name: "{{ ec2_name_prefix }}-student{{ item.0 + 1 }}-node6"
       Index: "{{ item[0] }}"
-      Student: "student{{ item.0 + 1 }}"
+      Student: student{{ item.0 + 1 }}
       launch_time: "{{ item.1.launch_time }}"
   with_indexed_items:
     - "{{ node6_output.instances }}"
@@ -220,7 +220,7 @@
   amazon.aws.ec2_instance:
     instance_ids: "{{ item.1.instance_id }}"
     region: "{{ ec2_region }}"
-    instance_role: "VPCLockDown_{{ ec2_name_prefix }}_student{{ item.0 + 1 }}"
+    instance_role: VPCLockDown_{{ ec2_name_prefix }}_student{{ item.0 + 1 }}
     state: running
     wait: true
   with_indexed_items:

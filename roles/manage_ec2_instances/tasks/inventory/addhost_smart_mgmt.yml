@@ -16,7 +16,7 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_satellite": "{{ec2_name_prefix}}-satellite"
+      tag:Workshop_satellite: "{{ec2_name_prefix}}-satellite"
   register: satellite_node_facts
 
 - name: add satellite to group

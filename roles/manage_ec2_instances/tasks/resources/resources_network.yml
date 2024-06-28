@@ -6,8 +6,8 @@
     region: "{{ ec2_region }}"
     tags:
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       ansible-workshops: "true"
   register: create_vpc2
@@ -23,46 +23,46 @@
     vpc_id: "{{create_vpc2.vpc.id}}"
     tags:
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       ansible-workshops: "true"
     rules:
       - proto: 47
         to_port: -1
         from_port: -1
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
       - proto: tcp
         to_port: 443
         from_port: 443
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
       - proto: icmp
         to_port: -1
         from_port: -1
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
       - proto: tcp
         to_port: 80
         from_port: 80
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
       - proto: tcp
         to_port: 22
         from_port: 22
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
       - proto: tcp
         to_port: 8443
         from_port: 8443
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
       - proto: tcp
         to_port: 830
         from_port: 830
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
       - proto: tcp
         to_port: 179
         from_port: 179
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
     rules_egress:
       - proto: all
-        cidr_ip: 0.0.0.0/0
+        cidr_ip: "0.0.0.0/0"
   when: ec2_vpc_id2 is undefined
   register: create_sg2
   until: create_sg2 is not failed
@@ -77,8 +77,8 @@
     resource_tags:
       Name: "{{ ec2_name_prefix }}-subnet2"
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       ansible-workshops: "true"
   register: create_subnet2
@@ -92,9 +92,9 @@
     vpc_id: "{{ create_vpc2.vpc.id }}"
     tags:
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
-      Students: "Total {{ student_total|int }}"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
+      Students: Total {{ student_total|int }}
       ansible-workshops: "true"
   register: igw2
   until: igw2 is not failed
@@ -108,12 +108,12 @@
     subnets:
       - "{{ create_subnet2.subnet.id }}"
     routes:
-      - dest: 0.0.0.0/0
+      - dest: "0.0.0.0/0"
         gateway_id: "{{ igw2.gateway_id }}"
     tags:
       Username: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
       ansible-workshops: "true"
   register: routetablenetworking

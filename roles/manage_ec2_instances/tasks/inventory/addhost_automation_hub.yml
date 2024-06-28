@@ -4,12 +4,12 @@
     region: "{{ ec2_region }}"
     filters:
       instance-state-name: running
-      "tag:Workshop_automation-hub": "{{ec2_name_prefix}}-automation-hub"
+      tag:Workshop_automation-hub: "{{ec2_name_prefix}}-automation-hub"
   register: automation_hub_host_facts
 
 - name: Add automation hub instance to host group
   add_host:
-    hostname: 'automation-hub-host'
+    hostname: automation-hub-host
     short_name: "{{ item.tags.short_name }}"
     username: "{{ item.tags.username }}"
     ansible_user: "{{ item.tags.username }}"

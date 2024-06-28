@@ -14,7 +14,7 @@
     state: running
     filters:
       instance-state-name: running
-      "tag:Workshop_attendance": "{{ ec2_name_prefix }}-attendance"
+      tag:Workshop_attendance: "{{ ec2_name_prefix }}-attendance"
     tags:
       Workshop_attendance: "{{ ec2_name_prefix }}-attendance"
       Name: "{{ ec2_name_prefix }}-attendance"
@@ -23,11 +23,11 @@
       Workshop_type: "{{ workshop_type }}"
       AWS_USERNAME: "{{ aws_user }}"
       owner: "{{ aws_user }}"
-      Info: "Username that provisioned this-> {{ aws_user }}"
-      Linklight: "This was provisioned through the linklight provisioner"
+      Info: Username that provisioned this-> {{ aws_user }}
+      Linklight: This was provisioned through the linklight provisioner
       Students: "{{ student_total|int }}"
-      short_name: 'attendance-host'
-      long_name: "attendance-host.{{ ec2_name_prefix }}.{{ workshop_dns_zone | default('') }}"
+      short_name: attendance-host
+      long_name: attendance-host.{{ ec2_name_prefix }}.{{ workshop_dns_zone | default('') }}
       username: "{{ ec2_info['attendance_host']['username'] }}"
       ansible-workshops: "true"
     volumes:
@@ -39,4 +39,3 @@
           throughput: "{{ ec2_info[rhel].disk_throughput }}"
           delete_on_termination: true
   register: attendance_output
-...
