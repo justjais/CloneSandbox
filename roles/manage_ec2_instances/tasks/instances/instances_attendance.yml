@@ -1,0 +1,12 @@
+---
+- name: Attendance instance size list length
+  ansible.builtin.debug:
+    msg: "Attendance instance size list length: {{ ec2_info['attendance_host']['size'] | length }}"
+
+- name: Initialize/reset list count
+  ansible.builtin.set_fact:
+    list_count: "reset"
+
+- name: Call attendance retry tasks include
+  ansible.builtin.include_tasks: attendance/attendance_loop.yml
+...

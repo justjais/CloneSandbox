@@ -1,0 +1,12 @@
+---
+- name: CentOS 6 instance size list length
+  ansible.builtin.debug:
+    msg: "CentOS 6 instance size list length: {{ ec2_info[centos6].size | length }}"
+
+- name: Initialize/reset list count
+  ansible.builtin.set_fact:
+    list_count: "reset"
+
+- name: Call CentOS 6 retry tasks include
+  ansible.builtin.include_tasks: centos_6/centos_6_loop.yml
+...
