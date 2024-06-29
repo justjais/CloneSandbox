@@ -1,13 +1,13 @@
 ---
 - name: Set facts vpc_cidr, subnet_cidr
   ansible.builtin.set_fact:
-    vpc_cidr: '10.{{ 256 | random(seed=resource_prefix) }}.0.0/16'
-    subnet_cidr: '10.{{ 256 | random(seed=resource_prefix) }}.0.0/24'
+    vpc_cidr: 10.{{ 256 | random(seed=resource_prefix) }}.0.0/16
+    subnet_cidr: 10.{{ 256 | random(seed=resource_prefix) }}.0.0/24
 
 - name: describe vpc
   ec2_vpc_net_info:
     filters:
-      tag:Name: '{{ resource_prefix }}_setup'
+      tag:Name: "{{ resource_prefix }}_setup"
   register: vpc_info
 
 - name: Tear down
@@ -30,30 +30,30 @@
 
     - name: remove setup security group
       ec2_security_group:
-        name: '{{ resource_prefix }}_setup'
-        description: 'created by Ansible integration tests'
+        name: "{{ resource_prefix }}_setup"
+        description: created by Ansible integration tests
         state: absent
-        vpc_id: '{{ vpc_id }}'
+        vpc_id: "{{ vpc_id }}"
       ignore_errors: true
 
     - name: remove setup subnet
       ec2_vpc_subnet:
-        az: '{{ aws_region }}a'
-        tags: '{{ resource_prefix }}_setup'
-        vpc_id: '{{ vpc_id }}'
-        cidr: '{{ subnet_cidr }}'
+        az: "{{ aws_region }}a"
+        tags: "{{ resource_prefix }}_setup"
+        vpc_id: "{{ vpc_id }}"
+        cidr: "{{ subnet_cidr }}"
         state: absent
         resource_tags:
-          Name: '{{ resource_prefix }}_setup'
+          Name: "{{ resource_prefix }}_setup"
       ignore_errors: true
 
     - name: remove setup VPC
       ec2_vpc_net:
-        cidr_block: '{{ vpc_cidr }}'
+        cidr_block: "{{ vpc_cidr }}"
         state: absent
-        name: '{{ resource_prefix }}_setup'
+        name: "{{ resource_prefix }}_setup"
         resource_tags:
-          Name: '{{ resource_prefix }}_setup'
+          Name: "{{ resource_prefix }}_setup"
       ignore_errors: true
 
   when: vpc_info.vpcs | length > 0
