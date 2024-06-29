@@ -1,3 +1,4 @@
+---
 - name: verify logical drives
   verify_logical_drives:
     baseuri: "{{ baseuri }}"
