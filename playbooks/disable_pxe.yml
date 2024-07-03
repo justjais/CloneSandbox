@@ -10,37 +10,37 @@
 
   tasks:
   - name: Create session
-    redfish_command:
+    register: result
+    community.general.redfish_command:
       category: Sessions
       command: CreateSession
       baseuri: "{{ baseuri }}"
       username: "{{ username }}"
       password: "{{ password }}"
-    register: result
 
   - name: Set {{ bios_attr }}
-    redfish_config:
+    register: bios_attribute
+    community.general.redfish_config:
       category: Systems
       command: SetBiosAttributes
       bios_attributes: "{{ bios_attr }}"
       baseuri: "{{ baseuri }}"
-      # username: "{{ username }}"
-      # password: "{{ password }}"
+        # username: "{{ username }}"
+        # password: "{{ password }}"
       auth_token: "{{ result.session.token }}"
-    register: bios_attribute
 
   - name: Reboot system to apply new BIOS settings
-    redfish_command:
+    when: bios_attribute.changed
+    community.general.redfish_command:
       category: Systems
       command: PowerReboot
       baseuri: "{{ baseuri }}"
-      # username: "{{ username }}"
-      # password: "{{ password }}"
+        # username: "{{ username }}"
+        # password: "{{ password }}"
       auth_token: "{{ result.session.token }}"
-    when: bios_attribute.changed
 
   - name: Delete session using security token created by CreateSesssion above
-    redfish_command:
+    community.general.redfish_command:
       category: Sessions
       command: DeleteSession
       baseuri: "{{ baseuri }}"
