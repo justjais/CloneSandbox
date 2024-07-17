@@ -1,2 +1,2 @@
 # CloneSandbox
-CloneSandbox repo(test).
+CloneSandbox repo.
