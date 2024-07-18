@@ -1,0 +1,15 @@
+---
+- name: Get service quota change history in region {{ customer_account_region }}
+  ansible.builtin.command:
+    cmd: "aws --region {{ customer_account_region }} service-quotas list-requested-service-quota-change-history-by-quota
+             --service-code {{ item.service_code }} --quota-code {{ item.quota_code }}"
+  register: quota_change_history
+  changed_when: false
+
+- name: Submit a new quota request in region {{ customer_account_region }} # noqa name[template]
+  when: ((quota_change_history.stdout | from_json).RequestedQuotas | length == 0) or
+        (((quota_change_history.stdout | from_json).RequestedQuotas[0].DesiredValue | int) != (item.value | int))
+  ansible.builtin.command:
+    cmd: "aws --region {{ customer_account_region }} service-quotas request-service-quota-increase
+             --service-code {{ item.service_code }} --quota-code {{ item.quota_code }} --desired-value {{ item.value }}"
+  changed_when: false
