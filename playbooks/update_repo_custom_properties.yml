@@ -6,6 +6,7 @@
 
 # This must be removed after we remove the topics setting
 # and rename repo_topics to repo_custom_properties
+
 - name: Set input
   ansible.builtin.set_fact:
     repo_custom_properties: "{{ repo_topics }}"
