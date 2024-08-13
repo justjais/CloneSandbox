@@ -1,48 +1,48 @@
----
 - hosts: myhosts
   connection: local
   name: Disable PXE in NICs
-  gather_facts: False
+  gather_facts: false
   # vars_files: iLO_redfish.yml
 
   vars:
-  - bios_attr: {"Slot1NicBoot1": "Disabled"}  # The dictionary is of the format {"attribute_name" : "attribute_value"}
+  - bios_attr: {Slot1NicBoot1: Disabled}      # The dictionary is of the format {"attribute_name" : "attribute_value"}
 
   tasks:
+
   - name: Create session
-    redfish_command:
+    register: result
+    community.general.redfish_command:
       category: Sessions
       command: CreateSession
-      baseuri: "{{ baseuri }}"
-      username: "{{ username }}"
-      password: "{{ password }}"
-    register: result
+      baseuri: '{{ baseuri }}'
+      username: '{{ username }}'
+      password: '{{ password }}'
 
   - name: Set {{ bios_attr }}
-    redfish_config:
+    register: bios_attribute
+    community.general.redfish_config:
       category: Systems
       command: SetBiosAttributes
-      bios_attributes: "{{ bios_attr }}"
-      baseuri: "{{ baseuri }}"
+      bios_attributes: '{{ bios_attr }}'
+      baseuri: '{{ baseuri }}'
       # username: "{{ username }}"
       # password: "{{ password }}"
-      auth_token: "{{ result.session.token }}"
-    register: bios_attribute
+      auth_token: '{{ result.session.token }}'
 
   - name: Reboot system to apply new BIOS settings
-    redfish_command:
+    when: bios_attribute.changed
+    community.general.redfish_command:
       category: Systems
       command: PowerReboot
-      baseuri: "{{ baseuri }}"
+      baseuri: '{{ baseuri }}'
       # username: "{{ username }}"
       # password: "{{ password }}"
-      auth_token: "{{ result.session.token }}"
-    when: bios_attribute.changed
+      auth_token: '{{ result.session.token }}'
 
   - name: Delete session using security token created by CreateSesssion above
-    redfish_command:
+    community.general.redfish_command:
       category: Sessions
       command: DeleteSession
-      baseuri: "{{ baseuri }}"
-      auth_token: "{{ result.session.token }}"
-      session_uri: "{{ result.session.uri }}"
+      baseuri: '{{ baseuri }}'
+      auth_token: '{{ result.session.token }}'
+      session_uri: '{{ result.session.uri }}'
