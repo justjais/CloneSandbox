@@ -1,11 +1,11 @@
 - name: Creating SNMP alert destinations
-  create_snmp_alert_destinations:
-    baseuri: "{{ baseuri }}"
-    username: "{{ username }}"
-    password: "{{ password }}"
-    alert_destinations: "{{ alert_destinations }}"
   register: result
+  hpe.ilo.create_snmp_alert_destinations:
+    baseuri: '{{ baseuri }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
+    alert_destinations: '{{ alert_destinations }}'
 
 - name: Status
-  debug:
-    msg: "{{ result }}"
+  ansible.builtin.debug:
+    msg: '{{ result }}'
