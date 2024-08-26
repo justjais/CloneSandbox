@@ -16,5 +16,5 @@
     msg: Only one authentication method is allowed. Provide either username/password or cert_file/key_file or auth_token.
   when:
     - ((username is defined or password is defined) and (cert_file is defined or key_file is defined) and auth_token is defined) or ((username is defined or password
-      is defined) and (cert_file is defined or key_file is defined)) or ((username is defined or password is defined) and auth_token is defined) or ((cert_file
-      is defined or key_file is defined) and auth_token is defined)
+      is defined) and (cert_file is defined or key_file is defined)) or ((username is defined or password is defined) and auth_token is defined) or ((cert_file is
+      defined or key_file is defined) and auth_token is defined)

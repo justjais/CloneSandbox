@@ -3,4 +3,4 @@
   include_role:
     name: network.base.resource_manager
   vars:
-    operation: 'configure'
+    operation: configure
