@@ -17,7 +17,7 @@
     headers:
       Accept: application/vnd.github+json
       Authorization: token {{ github_token }}
-      X-GitHub-Api-Version: "2022-11-28"
+      X-GitHub-Api-Version: '2022-11-28'
     status_code: 200
   register: existing_properties
 
@@ -29,7 +29,7 @@
   ansible.builtin.set_fact:
     dict_properties: "{{ dict_properties | ansible.builtin.combine({item.property_name: item.value}) }}"
   with_items:
-    - "{{ existing_properties.json }}"
+  - '{{ existing_properties.json }}'
 
 - name: Concat dictionaries and generate new properties
   ansible.builtin.set_fact:
@@ -42,7 +42,7 @@
     headers:
       Accept: application/vnd.github+json
       Authorization: token {{ github_token }}
-      X-GitHub-Api-Version: "2022-11-28"
+      X-GitHub-Api-Version: '2022-11-28'
     body_format: json
     body: "{\"properties\":{{ result_properties | dict2items(key_name='property_name', value_name='value') }}}"
     status_code: 204
