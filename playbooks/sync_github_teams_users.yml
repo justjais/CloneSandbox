@@ -1,69 +1,69 @@
----
+
 - name: GitHub Group name
   ansible.builtin.debug:
-    msg: "{{ github_group_name }}"
+    msg: '{{ github_group_name }}'
 
 - name: Validate the AWS IAM group name and managed policy
   ansible.builtin.assert:
     that:
-      - iam_managed_policy != ""
+    - iam_managed_policy != ""
     fail_msg: The required IAM value was not found.
     success_msg: Required IAM value is available.
 
 - name: Validate the GitHub organization and access token
   ansible.builtin.assert:
     that:
-      - github_group_name != ""
-      - github_access_token != ""
-      - github_organization != ""
-      - github_teams is defined
+    - github_group_name != ""
+    - github_access_token != ""
+    - github_organization != ""
+    - github_teams is defined
     fail_msg: The required GitHub value was not found.
     success_msg: Required GitHub values are available.
 
 - name: Get GitHub users on team
   redhat.ansible_saas_sre.github_team_members:
-    access_token: "{{ github_access_token }}"
-    organization: "{{ github_organization }}"
-    name: "{{ github_group_name }}"
+    access_token: '{{ github_access_token }}'
+    organization: '{{ github_organization }}'
+    name: '{{ github_group_name }}'
   register: github_team_users
   when:
-    - github_group_name in github_teams.teams
+  - github_group_name in github_teams.teams
 
 - name: Ensure AWS user exists
   amazon.aws.iam_user:
     managed_policies:
-      - IAMUserChangePassword
-    name: "{{ user_item }}"
+    - IAMUserChangePassword
+    name: '{{ user_item }}'
     # For now we will generate a random password here so that Console UI access will be allowed
     # but we do not have a way yet to get info to end user.  So an admin will still have
     # to get the proper info to a new user.
-    password: "{{ lookup('community.general.random_string', min_lower=1, min_upper=1, min_special=1, min_numeric=1, length=15) }}"
+    password: "{{ lookup('community.general.random_string', min_lower=1, min_upper=1,
+      min_special=1, min_numeric=1, length=15) }}"
     password_reset_required: true
     # Ensure we don't pick up a stray AWS_PROFILE
-    profile: ""
+    profile: ''
     state: present
     tags:
       created_by: SaaS Identity
     update_password: on_create
-  loop: "{{ github_team_users.members }}"
+  loop: '{{ github_team_users.members }}'
   loop_control:
     loop_var: user_item
   when:
-    - github_group_name in github_teams.teams
+  - github_group_name in github_teams.teams
 
 - name: Ensure group and users have correct policy
-  amazon.aws.iam_group:
-    name: "{{ github_group_name }}"
+  when:
+  - github_group_name in github_teams.teams
+  community.aws.iam_group:
+    name: '{{ github_group_name }}'
     managed_policies:
-      - "{{ iam_managed_policy }}"
-    # Ensure we don't pick up a stray AWS_PROFILE
-    profile: ""
+    - '{{ iam_managed_policy }}'
+    profile: ''
     purge_policies: true
     purge_users: true
-    users: "{{ github_team_users.members }}"
+    users: '{{ github_team_users.members }}'
     state: present
-  when:
-    - github_group_name in github_teams.teams
 
 - name: Create 'Ansible-SaaS-QE-Policies' Policy
   amazon.aws.iam_policy:
@@ -71,9 +71,10 @@
     iam_name: aap-saas-qe
     policy_name: Ansible-SaaS-QE-Policies
     # Ensure we don't pick up a stray AWS_PROFILE
-    profile: ""
+    profile: ''
     state: present
-    policy_json: "{{ lookup('ansible.builtin.file', 'files/ansible-saas-qe-team-identity-policy.json') }}"
+    policy_json: "{{ lookup('ansible.builtin.file', 'files/ansible-saas-qe-team-identity-policy.json')
+      }}"
   when: github_group_name == "aap-saas-qe"
 
 - name: Create 'Ansible-SaaS-Dev-Group-Policies' Policy
@@ -82,9 +83,10 @@
     iam_name: aap-saas-dev
     policy_name: Ansible-SaaS-Dev-Group-Policies
     # Ensure we don't pick up a stray AWS_PROFILE
-    profile: ""
+    profile: ''
     state: present
-    policy_json: "{{ lookup('ansible.builtin.file', 'files/ansible-saas-dev-team-identity-policy.json') }}"
+    policy_json: "{{ lookup('ansible.builtin.file', 'files/ansible-saas-dev-team-identity-policy.json')
+      }}"
   when: github_group_name == "aap-saas-dev"
 
 - name: Create 'Ansible-SaaS-SRE-Group-Policies' Policy
@@ -93,7 +95,7 @@
     iam_name: aap-saas-sre
     policy_name: Ansible-SaaS-SRE-Group-Policies
     # Ensure we don't pick up a stray AWS_PROFILE
-    profile: ""
+    profile: ''
     state: present
-    policy_json: "{{ lookup('ansible.builtin.file', 'files/ansible-saas-sre-role-team-identity-policy.json') }}"
-  when: github_group_name == "aap-saas-sre"
+    policy_json: "{{ lookup('ansible.builtin.file', 'files/ansible-saas-sre-role-team-identity-policy.json')
+      }}"

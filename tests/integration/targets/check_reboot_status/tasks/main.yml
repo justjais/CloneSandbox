@@ -1,10 +1,9 @@
 - name: Checking server reboot status
-  check_reboot_status:
-    baseuri: "{{ baseuri }}"
-    username: "{{ username }}"
-    password: "{{ password }}"
   register: result
+  hpe.ilo.check_reboot_status:
+    baseuri: '{{ baseuri }}'
+    username: '{{ username }}'
+    password: '{{ password }}'
 
 - name: Server reboot status
-  debug:
-    msg: "{{ result }}"
+  ansible.builtin.debug:

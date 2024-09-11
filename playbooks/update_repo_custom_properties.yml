@@ -1,4 +1,3 @@
----
 # custom properties is a github capability
 # repo_custom_properties is a dictionary of key/value pair.
 # if the property exists then the value is replaced.
@@ -6,18 +5,19 @@
 
 # This must be removed after we remove the topics setting
 # and rename repo_topics to repo_custom_properties
+
 - name: Set input
   ansible.builtin.set_fact:
-    repo_custom_properties: "{{ repo_topics }}"
+    repo_custom_properties: '{{ repo_topics }}'
 
 - name: Read existing properties from repository
   ansible.builtin.uri:
     method: GET
-    url: "{{ repository_api_url }}/properties/values"
+    url: '{{ repository_api_url }}/properties/values'
     headers:
       Accept: application/vnd.github+json
       Authorization: token {{ github_token }}
-      X-GitHub-Api-Version: "2022-11-28"
+      X-GitHub-Api-Version: '2022-11-28'
     status_code: 200
   register: existing_properties
 
@@ -27,22 +27,24 @@
 
 - name: Convert existing properties to dictionary
   ansible.builtin.set_fact:
-    dict_properties: "{{ dict_properties | ansible.builtin.combine({item.property_name: item.value}) }}"
+    dict_properties: '{{ dict_properties | ansible.builtin.combine({item.property_name:
+      item.value}) }}'
   with_items:
-    - "{{ existing_properties.json }}"
+  - '{{ existing_properties.json }}'
 
 - name: Concat dictionaries and generate new properties
   ansible.builtin.set_fact:
-    result_properties: "{{ dict_properties | ansible.builtin.combine(repo_custom_properties) }}"
+    result_properties: '{{ dict_properties | ansible.builtin.combine(repo_custom_properties)
+      }}'
 
 - name: Add properties to repository {{ instance_name }}
   ansible.builtin.uri:
     method: PATCH
-    url: "{{ repository_api_url }}/properties/values"
+    url: '{{ repository_api_url }}/properties/values'
     headers:
       Accept: application/vnd.github+json
       Authorization: token {{ github_token }}
-      X-GitHub-Api-Version: "2022-11-28"
+      X-GitHub-Api-Version: '2022-11-28'
     body_format: json
-    body: "{\"properties\":{{ result_properties | dict2items(key_name='property_name', value_name='value') }}}"
-    status_code: 204
+    body: "{\"properties\":{{ result_properties | dict2items(key_name='property_name',
+      value_name='value') }}}"
