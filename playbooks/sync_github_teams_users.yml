@@ -52,18 +52,17 @@
     - github_group_name in github_teams.teams
 
 - name: Ensure group and users have correct policy
-  amazon.aws.iam_group:
+  when:
+    - github_group_name in github_teams.teams
+  community.aws.iam_group:
     name: "{{ github_group_name }}"
     managed_policies:
       - "{{ iam_managed_policy }}"
-    # Ensure we don't pick up a stray AWS_PROFILE
     profile: ""
     purge_policies: true
     purge_users: true
     users: "{{ github_team_users.members }}"
     state: present
-  when:
-    - github_group_name in github_teams.teams
 
 - name: Create 'Ansible-SaaS-QE-Policies' Policy
   amazon.aws.iam_policy:
