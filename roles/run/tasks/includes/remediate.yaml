@@ -6,6 +6,6 @@
   ansible.builtin.include_role:
     name: network.base.resource_manager
   vars:
-    operation: 'remediate'
-    state: 'replaced'
+    operation: remediate
+    state: replaced
     resources: "{{ bgp_resources }}"
