@@ -6,6 +6,7 @@
 
 # This must be removed after we remove the topics setting
 # and rename repo_topics to repo_custom_properties
+
 - name: Set input
   ansible.builtin.set_fact:
     repo_custom_properties: "{{ repo_topics }}"
@@ -28,8 +29,7 @@
 - name: Convert existing properties to dictionary
   ansible.builtin.set_fact:
     dict_properties: "{{ dict_properties | ansible.builtin.combine({item.property_name: item.value}) }}"
-  with_items:
-    - "{{ existing_properties.json }}"
+    loop:
 
 - name: Concat dictionaries and generate new properties
   ansible.builtin.set_fact:
