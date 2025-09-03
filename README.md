@@ -1,2 +1,2 @@
 # CloneSandbox
-CloneSandbox repo.
+CloneSandbox repo. This is test for auto-merge
