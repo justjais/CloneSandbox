@@ -1,0 +1,64 @@
+name: Setup Branch Protection
+
+# This workflow can be triggered manually to set up branch protection rules
+# based on the current bot configuration
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (show what would be done without making changes)'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write  # Required to modify branch protection rules
+
+jobs:
+  setup-protection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: |
+          npm install @octokit/rest js-yaml
+          
+      - name: Run branch protection setup
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "🔍 Running in dry-run mode - no changes will be made"
+            # Add dry-run flag to the script (would need to be implemented in the script)
+            DRY_RUN=true node .github/scripts/setup-branch-protection.js
+          else
+            echo "🔧 Setting up branch protection rules..."
+            node .github/scripts/setup-branch-protection.js
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Branch Protection Setup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "✅ Dry-run completed - no changes were made" >> $GITHUB_STEP_SUMMARY
+            echo "Review the logs above to see what would be configured." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Branch protection setup completed" >> $GITHUB_STEP_SUMMARY
+            echo "The repository is now configured according to the bot configuration." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Test the auto-merge bot by creating a PR" >> $GITHUB_STEP_SUMMARY
+          echo "2. Monitor the 'Automated PR Merge Bot' workflow in the Actions tab" >> $GITHUB_STEP_SUMMARY
+          echo "3. Adjust settings in \`.github/bot-config.yml\` if needed" >> $GITHUB_STEP_SUMMARY

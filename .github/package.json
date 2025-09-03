@@ -1,0 +1,28 @@
+{
+  "name": "pr-merge-bot-scripts",
+  "version": "1.0.0",
+  "description": "Node.js dependencies for PR merge bot scripts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "setup-protection": "node scripts/setup-branch-protection.js",
+    "validate-config": "node scripts/validate-config.js",
+    "test-config": "js-yaml bot-config.yml > /dev/null && echo 'Configuration is valid YAML'"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.0.2",
+    "js-yaml": "^4.1.0",
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1"
+  },
+  "keywords": [
+    "github",
+    "automation",
+    "pull-request",
+    "merge",
+    "bot"
+  ],
+  "author": "PR Merge Bot System",
+  "license": "MIT"
+}
+
