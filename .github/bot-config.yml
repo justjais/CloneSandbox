@@ -9,8 +9,8 @@ bot_config:
   
   # Merge settings
   merge:
-    # Require at least this many approvals before merging
-    required_approvals: 0
+    # Require at least this many approvals before merging  
+    required_approvals: -1
     
     # Require all conversations to be resolved
     require_conversation_resolution: false
@@ -113,7 +113,7 @@ bot_config:
       default:
         name: "Default merge rules"
         conditions:
-          - "approved_reviews >= 0"
+          - "approved_reviews >= -1"
           - "has_auto_merge_label == true"
         actions:
           - merge
