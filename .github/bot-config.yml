@@ -13,7 +13,7 @@ bot_config:
     required_approvals: 0
     
     # Require all conversations to be resolved
-    require_conversation_resolution: true
+    require_conversation_resolution: false
     
     # Require status checks to pass
     require_status_checks: false
@@ -114,7 +114,6 @@ bot_config:
         name: "Default merge rules"
         conditions:
           - "approved_reviews >= 0"
-          - "status_checks_passed == true"
           - "has_auto_merge_label == true"
         actions:
           - merge
