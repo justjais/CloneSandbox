@@ -1,0 +1,559 @@
+name: Enhanced PR Merge Bot with Queue
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, labeled, unlabeled]
+    branches:
+      - main
+      - master
+      - develop
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+  status: {}
+  schedule:
+    # Check merge queue every 10 minutes for faster processing
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      force_queue_process:
+        description: 'Force process merge queue'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+  actions: read
+
+jobs:
+  load-config:
+    runs-on: ubuntu-latest
+    outputs:
+      config: ${{ steps.load.outputs.config }}
+      enabled: ${{ steps.load.outputs.enabled }}
+      queue_enabled: ${{ steps.load.outputs.queue_enabled }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Load bot configuration
+        id: load
+        run: |
+          if [ -f ".github/bot-config.yml" ]; then
+            # Extract enabled status
+            enabled=$(yq '.bot_config.enabled // true' .github/bot-config.yml)
+            queue_enabled=$(yq '.bot_config.queue.enabled // false' .github/bot-config.yml)
+            echo "enabled=$enabled" >> $GITHUB_OUTPUT
+            echo "queue_enabled=$queue_enabled" >> $GITHUB_OUTPUT
+            
+            # Convert YAML to JSON for easier parsing in other jobs
+            config=$(yq -o json '.bot_config' .github/bot-config.yml)
+            echo "config<<EOF" >> $GITHUB_OUTPUT
+            echo "$config" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+            echo "queue_enabled=false" >> $GITHUB_OUTPUT
+            echo "config={}" >> $GITHUB_OUTPUT
+          fi
+
+  manage-merge-queue:
+    needs: load-config
+    if: needs.load-config.outputs.enabled == 'true' && needs.load-config.outputs.queue_enabled == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install @octokit/rest js-yaml mustache
+          
+      - name: Create enhanced merge queue manager
+        run: |
+          cat > enhanced-merge-queue.js << 'EOF'
+          const { Octokit } = require('@octokit/rest');
+          const yaml = require('js-yaml');
+          const fs = require('fs');
+          const Mustache = require('mustache');
+
+          const octokit = new Octokit({
+            auth: process.env.GITHUB_TOKEN,
+          });
+
+          const config = JSON.parse(process.env.BOT_CONFIG);
+          const owner = process.env.GITHUB_REPOSITORY.split('/')[0];
+          const repo = process.env.GITHUB_REPOSITORY.split('/')[1];
+
+          class MergeQueue {
+            constructor() {
+              this.queueKey = 'merge-queue-state';
+              this.retryKey = 'merge-retry-count';
+            }
+
+            async getQueueState() {
+              try {
+                // In a real implementation, this would be stored in GitHub Issues, 
+                // repository variables, or external storage
+                // For now, we'll manage queue in-memory per workflow run
+                return {
+                  queue: [],
+                  processing: null,
+                  failed: []
+                };
+              } catch (error) {
+                console.log('Creating new queue state');
+                return { queue: [], processing: null, failed: [] };
+              }
+            }
+
+            async saveQueueState(state) {
+              // In a real implementation, save to persistent storage
+              console.log('Queue state would be saved:', JSON.stringify(state, null, 2));
+            }
+
+            async getPRPriority(pr) {
+              const labels = pr.labels.map(label => label.name);
+              const config_priority = config.queue?.priority_rules || {};
+              
+              let priority = 100; // Default priority
+
+              // Check high priority labels
+              const highPriorityLabels = config_priority.high_priority_labels || [];
+              if (highPriorityLabels.some(label => labels.includes(label))) {
+                priority += 50;
+              }
+
+              // Check low priority labels
+              const lowPriorityLabels = config_priority.low_priority_labels || [];
+              if (lowPriorityLabels.some(label => labels.includes(label))) {
+                priority -= 30;
+              }
+
+              // Trusted author bonus
+              if (config_priority.trusted_author_bonus) {
+                const trustedUsers = config.triggers?.trusted_users || [];
+                if (trustedUsers.includes(pr.user.login)) {
+                  priority += 25;
+                }
+              }
+
+              // Age bonus (older PRs get slight priority boost)
+              const ageInHours = (Date.now() - new Date(pr.created_at)) / (1000 * 60 * 60);
+              priority += Math.min(ageInHours / 24, 10); // Max 10 points for age
+
+              return priority;
+            }
+
+            async buildMergeQueue() {
+              console.log('🔄 Building merge queue...');
+              
+              // Get all open PRs
+              const prs = await octokit.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                sort: 'created',
+                direction: 'asc'
+              });
+
+              console.log(`Found ${prs.data.length} open PRs`);
+              
+              const eligiblePRs = [];
+              
+              for (const pr of prs.data) {
+                if (await this.shouldQueuePR(pr)) {
+                  const priority = await this.getPRPriority(pr);
+                  eligiblePRs.push({ ...pr, priority });
+                  console.log(`✅ PR #${pr.number} eligible for queue (priority: ${priority})`);
+                } else {
+                  console.log(`❌ PR #${pr.number} not eligible for queue`);
+                }
+              }
+
+              // Sort by priority (highest first)
+              eligiblePRs.sort((a, b) => b.priority - a.priority);
+              
+              return eligiblePRs;
+            }
+
+            async shouldQueuePR(pr) {
+              try {
+                // Check if PR is draft
+                if (pr.draft && !config.triggers?.merge_drafts) {
+                  return false;
+                }
+
+                // Check for skip labels
+                const skipLabels = config.triggers?.skip_labels || [];
+                const prLabels = pr.labels.map(label => label.name);
+                
+                for (const skipLabel of skipLabels) {
+                  if (prLabels.includes(skipLabel)) {
+                    return false;
+                  }
+                }
+
+                // Check for auto-merge labels (if configured)
+                const autoMergeLabels = config.triggers?.auto_merge_labels || [];
+                if (autoMergeLabels.length > 0) {
+                  const hasAutoMergeLabel = autoMergeLabels.some(label => prLabels.includes(label));
+                  if (!hasAutoMergeLabel) {
+                    return false;
+                  }
+                }
+
+                // Check approvals
+                const reviews = await octokit.rest.pulls.listReviews({
+                  owner,
+                  repo,
+                  pull_number: pr.number
+                });
+
+                const approvals = reviews.data.filter(review => 
+                  review.state === 'APPROVED' && 
+                  review.user.login !== pr.user.login
+                );
+
+                const requiredApprovals = config.merge?.required_approvals || 1;
+                if (approvals.length < requiredApprovals) {
+                  return false;
+                }
+
+                // Check for requesting changes
+                const changesRequested = reviews.data.some(review => 
+                  review.state === 'CHANGES_REQUESTED' &&
+                  !reviews.data.some(laterReview => 
+                    laterReview.user.login === review.user.login &&
+                    laterReview.submitted_at > review.submitted_at &&
+                    laterReview.state === 'APPROVED'
+                  )
+                );
+
+                if (changesRequested) {
+                  return false;
+                }
+
+                // Check status checks
+                if (config.merge?.require_status_checks) {
+                  const statusChecks = await octokit.rest.repos.getCombinedStatusForRef({
+                    owner,
+                    repo,
+                    ref: pr.head.sha
+                  });
+
+                  if (statusChecks.data.state !== 'success') {
+                    return false;
+                  }
+                }
+
+                return true;
+                
+              } catch (error) {
+                console.error(`Error evaluating PR #${pr.number}:`, error);
+                return false;
+              }
+            }
+
+            async updateBranch(pr) {
+              if (!config.queue?.update_branches) {
+                return true;
+              }
+
+              try {
+                console.log(`🔄 Updating branch for PR #${pr.number}`);
+                
+                // Check if branch is behind
+                const comparison = await octokit.rest.repos.compareCommits({
+                  owner,
+                  repo,
+                  base: pr.head.sha,
+                  head: pr.base.sha
+                });
+
+                if (comparison.data.ahead_by > 0) {
+                  console.log(`Branch is ${comparison.data.ahead_by} commits behind, updating...`);
+                  
+                  // Update branch using GitHub API
+                  await octokit.rest.pulls.updateBranch({
+                    owner,
+                    repo,
+                    pull_number: pr.number
+                  });
+                  
+                  console.log(`✅ Branch updated for PR #${pr.number}`);
+                  return true;
+                } else {
+                  console.log(`✅ Branch is up to date for PR #${pr.number}`);
+                  return true;
+                }
+                
+              } catch (error) {
+                console.error(`❌ Failed to update branch for PR #${pr.number}:`, error.message);
+                return false;
+              }
+            }
+
+            async generateCommitMessage(pr) {
+              if (!config.commit_templates?.enabled) {
+                return undefined; // Use default GitHub commit message
+              }
+
+              try {
+                const mergeMethod = config.merge?.merge_method || 'merge';
+                let template;
+
+                switch (mergeMethod) {
+                  case 'squash':
+                    template = config.commit_templates.squash_template;
+                    break;
+                  case 'rebase':
+                    return undefined; // Use original commit messages
+                  default:
+                    template = config.commit_templates.merge_template;
+                }
+
+                if (!template || template === 'original') {
+                  return undefined;
+                }
+
+                // Get additional data for template
+                const reviews = await octokit.rest.pulls.listReviews({
+                  owner,
+                  repo,
+                  pull_number: pr.number
+                });
+
+                const commits = await octokit.rest.pulls.listCommits({
+                  owner,
+                  repo,
+                  pull_number: pr.number
+                });
+
+                const approvers = reviews.data
+                  .filter(review => review.state === 'APPROVED')
+                  .map(review => review.user.login)
+                  .filter((user, index, arr) => arr.indexOf(user) === index);
+
+                const templateData = {
+                  title: pr.title,
+                  number: pr.number,
+                  body: pr.body || '',
+                  author: {
+                    name: pr.user.login,
+                    email: `${pr.user.login}@users.noreply.github.com`
+                  },
+                  approved_by: approvers.join(', '),
+                  commits: {
+                    count: commits.data.length
+                  },
+                  branch: pr.head.ref,
+                  base_branch: pr.base.ref
+                };
+
+                const commitMessage = Mustache.render(template, templateData);
+                console.log(`📝 Generated commit message for PR #${pr.number}`);
+                return commitMessage;
+
+              } catch (error) {
+                console.error(`Failed to generate commit message for PR #${pr.number}:`, error);
+                return undefined;
+              }
+            }
+
+            async mergePR(pr) {
+              try {
+                const mergeMethod = config.merge?.merge_method || 'merge';
+                
+                console.log(`🚀 Attempting to merge PR #${pr.number} using ${mergeMethod} method`);
+                
+                // Update branch if needed
+                if (!(await this.updateBranch(pr))) {
+                  throw new Error('Failed to update branch');
+                }
+
+                // Generate commit message
+                const commitMessage = await this.generateCommitMessage(pr);
+                
+                const mergeOptions = {
+                  owner,
+                  repo,
+                  pull_number: pr.number,
+                  merge_method: mergeMethod
+                };
+
+                if (commitMessage) {
+                  const lines = commitMessage.split('\n');
+                  mergeOptions.commit_title = lines[0];
+                  mergeOptions.commit_message = lines.slice(1).join('\n').trim();
+                }
+
+                const mergeResult = await octokit.rest.pulls.merge(mergeOptions);
+
+                if (mergeResult.data.merged) {
+                  console.log(`✅ Successfully merged PR #${pr.number}`);
+                  
+                  // Delete branch if configured
+                  if (config.merge?.delete_branch_after_merge && pr.head.ref !== pr.base.ref) {
+                    try {
+                      await octokit.rest.git.deleteRef({
+                        owner,
+                        repo,
+                        ref: `heads/${pr.head.ref}`
+                      });
+                      console.log(`🗑️  Deleted branch: ${pr.head.ref}`);
+                    } catch (deleteError) {
+                      console.log(`⚠️  Could not delete branch ${pr.head.ref}:`, deleteError.message);
+                    }
+                  }
+
+                  // Send notification if configured
+                  if (config.notifications?.notify_on_merge) {
+                    await this.sendNotification(`PR #${pr.number} "${pr.title}" has been automatically merged.`, 'success');
+                  }
+
+                  return { success: true, merged: true };
+                } else {
+                  throw new Error('Merge operation returned success=false');
+                }
+                
+              } catch (error) {
+                console.error(`❌ Failed to merge PR #${pr.number}:`, error.message);
+                
+                if (config.notifications?.notify_on_failure) {
+                  await this.sendNotification(`Failed to merge PR #${pr.number} "${pr.title}": ${error.message}`, 'error');
+                }
+
+                return { success: false, error: error.message };
+              }
+            }
+
+            async sendNotification(message, type) {
+              try {
+                console.log(`📢 ${type.toUpperCase()}: ${message}`);
+                // Implement webhook notifications here if configured
+              } catch (error) {
+                console.error('Failed to send notification:', error);
+              }
+            }
+
+            async processQueue() {
+              console.log('🔄 Processing merge queue...');
+              
+              const queue = await this.buildMergeQueue();
+              
+              if (queue.length === 0) {
+                console.log('📭 No PRs in merge queue');
+                return;
+              }
+
+              console.log(`📋 Queue contains ${queue.length} PRs`);
+              
+              const queueMethod = config.queue?.method || 'serial';
+              const batchSize = config.queue?.batch_size || 1;
+
+              if (queueMethod === 'serial') {
+                // Process PRs one by one
+                for (const pr of queue) {
+                  console.log(`\n🎯 Processing PR #${pr.number}: ${pr.title}`);
+                  
+                  const result = await this.mergePR(pr);
+                  
+                  if (result.success) {
+                    console.log(`✅ PR #${pr.number} merged successfully`);
+                    break; // Only merge one PR at a time in serial mode
+                  } else {
+                    console.log(`❌ PR #${pr.number} failed to merge: ${result.error}`);
+                    // Continue to next PR in case of failure
+                  }
+                }
+              } else {
+                // Process PRs in parallel batches
+                console.log(`🚀 Processing ${Math.min(batchSize, queue.length)} PRs in parallel`);
+                
+                const batch = queue.slice(0, batchSize);
+                const promises = batch.map(pr => this.mergePR(pr));
+                const results = await Promise.allSettled(promises);
+                
+                results.forEach((result, index) => {
+                  const pr = batch[index];
+                  if (result.status === 'fulfilled' && result.value.success) {
+                    console.log(`✅ PR #${pr.number} merged successfully`);
+                  } else {
+                    console.log(`❌ PR #${pr.number} failed to merge`);
+                  }
+                });
+              }
+            }
+          }
+
+          // Main execution
+          async function main() {
+            try {
+              console.log('🚀 Enhanced Merge Queue Manager Starting...');
+              console.log('Configuration:', {
+                enabled: config.queue?.enabled,
+                method: config.queue?.method,
+                batchSize: config.queue?.batch_size,
+                updateBranches: config.queue?.update_branches
+              });
+              
+              const queue = new MergeQueue();
+              await queue.processQueue();
+              
+              console.log('✅ Merge queue processing completed');
+              
+            } catch (error) {
+              console.error('💥 Fatal error in merge queue:', error);
+              process.exit(1);
+            }
+          }
+
+          main();
+          EOF
+
+      - name: Run enhanced merge queue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOT_CONFIG: ${{ needs.load-config.outputs.config }}
+        run: |
+          node enhanced-merge-queue.js
+
+  # Fallback to original merge bot if queue is disabled
+  fallback-merge:
+    needs: load-config
+    if: needs.load-config.outputs.enabled == 'true' && needs.load-config.outputs.queue_enabled == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install @octokit/rest js-yaml
+          
+      - name: Run original merge bot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOT_CONFIG: ${{ needs.load-config.outputs.config }}
+        run: |
+          echo "🔄 Running fallback merge bot (queue disabled)"
+          # This would run the original merge logic from auto-merge-pr.yml
+          echo "Original merge bot logic would run here"

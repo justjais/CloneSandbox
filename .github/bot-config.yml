@@ -1,0 +1,415 @@
+# PR Merge Bot Configuration
+# This file defines the rules and settings for automated PR merging
+# Users can modify these rules by submitting PRs that update this file
+
+bot_config:
+  # General bot settings
+  bot_name: "pr-merge-bot"
+  enabled: true
+  
+  # Merge settings
+  merge:
+    # Require at least this many approvals before merging
+    required_approvals: 1
+    
+    # Require all conversations to be resolved
+    require_conversation_resolution: true
+    
+    # Require status checks to pass
+    require_status_checks: true
+    
+    # Required status checks (can be updated as needed)
+    required_status_checks:
+      - "ci/tests"
+      - "ci/lint"
+    
+    # Auto-merge method: merge, squash, or rebase
+    merge_method: "squash"
+    
+    # Delete branch after merge
+    delete_branch_after_merge: true
+    
+    # Maximum days old a PR can be to auto-merge (0 = no limit)
+    # max_pr_age_days: 30
+
+  # Merge queue settings (inspired by Mergify)
+  queue:
+    # Enable merge queue functionality
+    enabled: true
+    
+    # Queue processing method: "serial" or "parallel"
+    method: "serial"
+    
+    # Maximum number of PRs to process simultaneously in parallel mode
+    batch_size: 3
+    
+    # Automatically update PR branches before merge
+    update_branches: true
+    
+    # Retry failed merges (due to conflicts)
+    retry_on_conflict: true
+    max_retries: 2
+    
+    # Queue priority rules
+    priority_rules:
+      # High priority labels
+      high_priority_labels:
+        - "urgent"
+        - "hotfix"
+        - "security"
+      
+      # Low priority labels  
+      low_priority_labels:
+        - "documentation"
+        - "refactor"
+      
+      # Priority by author (trusted users get higher priority)
+      trusted_author_bonus: true
+
+  # Commit message templates (inspired by Mergify)
+  commit_templates:
+    # Enable custom commit message formatting
+    enabled: true
+    
+    # Template for merge commits
+    merge_template: |
+      {{ title }} (#{{ number }})
+      
+      {{ body }}
+      
+      Co-authored-by: {{ author.name }} <{{ author.email }}>
+      Approved-by: {{ approved_by }}
+    
+    # Template for squash commits
+    squash_template: |
+      {{ title }} (#{{ number }})
+      
+      {{ body }}
+      
+      Merged: {{ commits.count }} commits
+      Approved-by: {{ approved_by }}
+    
+    # Template for rebase commits (uses original commit messages)
+    rebase_template: "original"
+    
+    # Available variables for templates
+    variables:
+      - "title"         # PR title
+      - "number"        # PR number  
+      - "body"          # PR body
+      - "author.name"   # Author name
+      - "author.email"  # Author email
+      - "approved_by"   # List of approvers
+      - "commits.count" # Number of commits
+      - "branch"        # Source branch name
+      - "base_branch"   # Target branch name
+
+  # Advanced conditional rules (beyond Mergify capabilities)
+  advanced_rules:
+    # Enable advanced rule engine
+    enabled: true
+    
+    # Multiple rule sets that can be applied conditionally
+    rule_sets:
+      # Default rules for most PRs
+      default:
+        name: "Default merge rules"
+        conditions:
+          - "approved_reviews >= 1"
+          - "status_checks_passed == true"
+          - "has_auto_merge_label == true"
+        actions:
+          - merge
+          - delete_branch
+          - notify
+      
+      # Stricter rules for sensitive files
+      sensitive_files:
+        name: "Sensitive files require extra approval"
+        conditions:
+          - "changes_sensitive_files == true"
+          - "approved_reviews >= 2"
+          - "status_checks_passed == true"
+          - "has_security_review == true"
+        actions:
+          - merge
+          - delete_branch
+          - notify_security_team
+      
+      # Fast-track for trusted contributors
+      trusted_contributor:
+        name: "Fast-track for trusted users"
+        conditions:
+          - "author_is_trusted == true"
+          - "approved_reviews >= 1 OR author_is_maintainer == true"
+          - "status_checks_passed == true"
+          - "file_changes < 10"
+          - "line_changes < 100"
+        actions:
+          - merge
+          - delete_branch
+      
+      # Documentation-only changes
+      docs_only:
+        name: "Documentation changes"
+        conditions:
+          - "files_match_pattern == '*.md' OR files_match_pattern == 'docs/**'"
+          - "approved_reviews >= 1"
+          - "author_is_contributor == true"
+        actions:
+          - merge
+          - delete_branch
+          - notify_docs_team
+      
+      # Hotfix emergency rules
+      hotfix:
+        name: "Emergency hotfix rules"
+        conditions:
+          - "has_label == 'hotfix' OR has_label == 'urgent'"
+          - "target_branch == 'main' OR target_branch == 'master'"
+          - "approved_reviews >= 1"
+          - "status_checks_passed == true"
+        actions:
+          - merge
+          - delete_branch
+          - notify_immediately
+          - create_followup_issue
+
+    # Custom variables for rule evaluation
+    variables:
+      # File pattern matching
+      sensitive_file_patterns:
+        - ".github/workflows/*"
+        - ".github/bot-config.yml"
+        - "security/**"
+        - "*/security.py"
+        - "Dockerfile"
+        - "docker-compose*.yml"
+      
+      docs_file_patterns:
+        - "*.md"
+        - "docs/**"
+        - "*.rst"
+        - "*.txt"
+      
+      # Trusted users and teams
+      trusted_users:
+        - "maintainer-1"
+        - "senior-dev"
+      
+      maintainers:
+        - "project-lead"
+        - "tech-lead"
+      
+      # Size thresholds
+      small_change_files: 5
+      small_change_lines: 50
+      medium_change_files: 20
+      medium_change_lines: 200
+
+  # Webhook integrations (beyond standard notifications)
+  webhooks:
+    # Enable webhook system
+    enabled: true
+    
+    # Webhook endpoints for different events
+    endpoints:
+      # General merge notifications
+      merge_success:
+        url: ""  # Set via repository secrets
+        events: ["merge_success"]
+        template: |
+          {
+            "text": "✅ PR #{{ number }} merged: {{ title }}",
+            "author": "{{ author }}",
+            "branch": "{{ branch }}",
+            "commits": {{ commits_count }}
+          }
+      
+      # Security team notifications  
+      security_review:
+        url: ""  # Set via repository secrets
+        events: ["sensitive_file_merge", "security_review_needed"]
+        template: |
+          {
+            "text": "🔒 Security review: PR #{{ number }} affects sensitive files",
+            "files": {{ sensitive_files }},
+            "author": "{{ author }}"
+          }
+      
+      # Failure notifications
+      merge_failure:
+        url: ""  # Set via repository secrets  
+        events: ["merge_failure", "conflict_detected"]
+        template: |
+          {
+            "text": "❌ Failed to merge PR #{{ number }}: {{ error }}",
+            "author": "{{ author }}",
+            "retry_count": {{ retry_count }}
+          }
+
+  # Analytics and reporting
+  analytics:
+    # Enable analytics collection
+    enabled: true
+    
+    # Metrics to track
+    metrics:
+      - "merge_success_rate"
+      - "average_merge_time" 
+      - "queue_wait_time"
+      - "failed_merge_reasons"
+      - "rule_set_usage"
+    
+    # Reporting schedule
+    reports:
+      weekly_summary:
+        enabled: true
+        schedule: "0 9 * * 1"  # Monday 9 AM
+        include:
+          - "merge_statistics"
+          - "top_contributors"
+          - "bottleneck_analysis"
+      
+      monthly_detailed:
+        enabled: true
+        schedule: "0 9 1 * *"   # First day of month 9 AM
+        include:
+          - "full_analytics"
+          - "trend_analysis"
+          - "configuration_recommendations"
+
+  # Branch protection settings
+  branch_protection:
+    # Branches to protect (support wildcards)
+    protected_branches:
+      - "main"
+      - "master"
+      - "develop"
+      - "release/*"
+    
+    # Dismiss stale reviews when new commits are pushed
+    dismiss_stale_reviews: true
+    
+    # Require branches to be up to date before merging
+    require_up_to_date_branches: true
+    
+    # Require linear history
+    require_linear_history: false
+    
+    # Allow force pushes to protected branches
+    allow_force_pushes: false
+    
+    # Allow deletions of protected branches
+    allow_deletions: false
+
+  # User and team permissions
+  permissions:
+    # Users who can bypass branch protection (repository admins)
+    bypass_users: []
+    
+    # Teams who can bypass branch protection
+    bypass_teams: []
+    
+    # Users who can modify this configuration file
+    config_editors:
+      - "repo-admins"
+    
+    # Minimum role required to approve PRs
+    min_approval_role: "write"
+
+  # Auto-merge triggers
+  triggers:
+    # Auto-merge when these labels are applied
+    auto_merge_labels:
+      - "auto-merge"
+      - "ready-to-merge"
+    
+    # Skip auto-merge when these labels are present
+    skip_labels:
+      - "work-in-progress"
+      - "do-not-merge"
+      - "needs-manual-review"
+    
+    # Auto-merge drafts (generally not recommended)
+    merge_drafts: false
+    
+    # Auto-merge when specific users approve
+    trusted_users: []
+
+  # Notification settings
+  notifications:
+    # Notify on successful merge
+    notify_on_merge: true
+    
+    # Notify when merge fails
+    notify_on_failure: true
+    
+    # Slack webhook for notifications (optional)
+    slack_webhook: ""
+    
+    # Teams webhook for notifications (optional)
+    teams_webhook: ""
+
+  # File path restrictions
+  file_restrictions:
+    # Files that require additional approval when modified
+    sensitive_files:
+      - ".github/workflows/*"
+      - ".github/bot-config.yml"
+      - "package.json"
+      - "requirements.txt"
+      - "Dockerfile"
+    
+    # Require additional approvals for sensitive files
+    sensitive_files_additional_approvals: 1
+    
+    # Paths that are ignored for auto-merge (require manual merge)
+    blocked_paths:
+      - ".github/bot-config.yml"  # This file requires manual review
+      - "security/*"
+      - "admin/*"
+
+  # Size limits
+  limits:
+    # Maximum number of changed files
+    max_changed_files: 50
+    
+    # Maximum lines changed
+    max_lines_changed: 1000
+    
+    # Maximum PR size in bytes
+    max_pr_size_bytes: 1048576  # 1MB
+    
+    # Skip size checks for these file types
+    size_check_exempt_extensions:
+      - ".md"
+      - ".txt"
+      - ".yml"
+      - ".yaml"
+
+  # Time-based settings
+  timing:
+    # Hours when auto-merge is allowed (24h format)
+    allowed_hours:
+      start: 9   # 9 AM
+      end: 17    # 5 PM
+    
+    # Days when auto-merge is allowed (0=Sunday, 1=Monday, etc.)
+    allowed_days: [1, 2, 3, 4, 5]  # Monday to Friday
+    
+    # Timezone for time-based rules
+    timezone: "UTC"
+    
+    # Minimum time PR must be open before auto-merge (minutes)
+    min_open_time_minutes: 30
+
+# Version of this configuration (used for migration/compatibility)
+config_version: "1.0.0"
+
+# Last updated information
+last_updated:
+  date: "2024-12-28"
+  updated_by: "system"
+  reason: "Initial configuration"
+

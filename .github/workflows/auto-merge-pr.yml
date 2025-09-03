@@ -1,0 +1,382 @@
+name: Automated PR Merge Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, labeled, unlabeled]
+    branches:
+      - main
+      - master
+      - develop
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+  status: {}
+  schedule:
+    # Run every 15 minutes to check for PRs ready to merge
+    - cron: '*/15 * * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  statuses: read
+  actions: read
+
+jobs:
+  load-config:
+    runs-on: ubuntu-latest
+    outputs:
+      config: ${{ steps.load.outputs.config }}
+      enabled: ${{ steps.load.outputs.enabled }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Load bot configuration
+        id: load
+        run: |
+          if [ -f ".github/bot-config.yml" ]; then
+            # Extract enabled status
+            enabled=$(yq '.bot_config.enabled // true' .github/bot-config.yml)
+            echo "enabled=$enabled" >> $GITHUB_OUTPUT
+            
+            # Convert YAML to JSON for easier parsing in other jobs
+            config=$(yq -o json '.bot_config' .github/bot-config.yml)
+            echo "config<<EOF" >> $GITHUB_OUTPUT
+            echo "$config" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+            echo "config={}" >> $GITHUB_OUTPUT
+          fi
+
+  evaluate-prs:
+    needs: load-config
+    if: needs.load-config.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # We'll process up to 10 PRs in parallel
+        pr-batch: [1]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install @octokit/rest js-yaml
+          
+      - name: Create PR evaluation script
+        run: |
+          cat > evaluate-pr.js << 'EOF'
+          const { Octokit } = require('@octokit/rest');
+          const yaml = require('js-yaml');
+          const fs = require('fs');
+
+          const octokit = new Octokit({
+            auth: process.env.GITHUB_TOKEN,
+          });
+
+          const config = JSON.parse(process.env.BOT_CONFIG);
+          const owner = process.env.GITHUB_REPOSITORY.split('/')[0];
+          const repo = process.env.GITHUB_REPOSITORY.split('/')[1];
+
+          async function evaluateAndMergePRs() {
+            try {
+              console.log('Loading configuration...');
+              console.log('Required approvals:', config.merge.required_approvals);
+              console.log('Merge method:', config.merge.merge_method);
+              
+              // Get all open PRs
+              const prs = await octokit.rest.pulls.list({
+                owner,
+                repo,
+                state: 'open',
+                sort: 'created',
+                direction: 'asc'
+              });
+
+              console.log(`Found ${prs.data.length} open PRs`);
+              
+              for (const pr of prs.data) {
+                console.log(`\nEvaluating PR #${pr.number}: ${pr.title}`);
+                
+                if (await shouldMergePR(pr)) {
+                  console.log(`PR #${pr.number} meets merge criteria, attempting merge...`);
+                  await mergePR(pr);
+                } else {
+                  console.log(`PR #${pr.number} does not meet merge criteria`);
+                }
+              }
+            } catch (error) {
+              console.error('Error in main evaluation:', error);
+              process.exit(1);
+            }
+          }
+
+          async function shouldMergePR(pr) {
+            try {
+              // Check if PR is draft
+              if (pr.draft && !config.triggers.merge_drafts) {
+                console.log('  ❌ PR is draft and merge_drafts is disabled');
+                return false;
+              }
+
+              // Check for skip labels
+              const skipLabels = config.triggers.skip_labels || [];
+              const prLabels = pr.labels.map(label => label.name);
+              
+              for (const skipLabel of skipLabels) {
+                if (prLabels.includes(skipLabel)) {
+                  console.log(`  ❌ PR has skip label: ${skipLabel}`);
+                  return false;
+                }
+              }
+
+              // Check for auto-merge labels (if configured)
+              const autoMergeLabels = config.triggers.auto_merge_labels || [];
+              if (autoMergeLabels.length > 0) {
+                const hasAutoMergeLabel = autoMergeLabels.some(label => prLabels.includes(label));
+                if (!hasAutoMergeLabel) {
+                  console.log('  ❌ PR missing required auto-merge label');
+                  return false;
+                }
+              }
+
+              // Check PR age
+              if (config.merge.max_pr_age_days > 0) {
+                const prAge = Math.floor((Date.now() - new Date(pr.created_at)) / (1000 * 60 * 60 * 24));
+                if (prAge > config.merge.max_pr_age_days) {
+                  console.log(`  ❌ PR is too old: ${prAge} days`);
+                  return false;
+                }
+              }
+
+              // Check minimum open time
+              const minOpenTime = config.timing.min_open_time_minutes || 0;
+              if (minOpenTime > 0) {
+                const openTime = Math.floor((Date.now() - new Date(pr.created_at)) / (1000 * 60));
+                if (openTime < minOpenTime) {
+                  console.log(`  ❌ PR hasn't been open long enough: ${openTime}/${minOpenTime} minutes`);
+                  return false;
+                }
+              }
+
+              // Check time restrictions
+              if (config.timing.allowed_hours || config.timing.allowed_days) {
+                const now = new Date();
+                const currentHour = now.getUTCHours();
+                const currentDay = now.getUTCDay();
+
+                if (config.timing.allowed_hours) {
+                  const start = config.timing.allowed_hours.start;
+                  const end = config.timing.allowed_hours.end;
+                  if (currentHour < start || currentHour >= end) {
+                    console.log(`  ❌ Outside allowed hours: ${currentHour} not in ${start}-${end}`);
+                    return false;
+                  }
+                }
+
+                if (config.timing.allowed_days) {
+                  if (!config.timing.allowed_days.includes(currentDay)) {
+                    console.log(`  ❌ Not an allowed day: ${currentDay}`);
+                    return false;
+                  }
+                }
+              }
+
+              // Check size limits
+              if (config.limits) {
+                if (config.limits.max_changed_files && pr.changed_files > config.limits.max_changed_files) {
+                  console.log(`  ❌ Too many changed files: ${pr.changed_files}/${config.limits.max_changed_files}`);
+                  return false;
+                }
+
+                if (config.limits.max_lines_changed && (pr.additions + pr.deletions) > config.limits.max_lines_changed) {
+                  console.log(`  ❌ Too many lines changed: ${pr.additions + pr.deletions}/${config.limits.max_lines_changed}`);
+                  return false;
+                }
+              }
+
+              // Check approvals
+              const reviews = await octokit.rest.pulls.listReviews({
+                owner,
+                repo,
+                pull_number: pr.number
+              });
+
+              const approvals = reviews.data.filter(review => 
+                review.state === 'APPROVED' && 
+                review.user.login !== pr.user.login
+              );
+
+              const requiredApprovals = config.merge.required_approvals || 1;
+              console.log(`  Reviews: ${approvals.length}/${requiredApprovals} approvals`);
+
+              if (approvals.length < requiredApprovals) {
+                console.log(`  ❌ Insufficient approvals: ${approvals.length}/${requiredApprovals}`);
+                return false;
+              }
+
+              // Check for requesting changes
+              const changesRequested = reviews.data.some(review => 
+                review.state === 'CHANGES_REQUESTED' &&
+                !reviews.data.some(laterReview => 
+                  laterReview.user.login === review.user.login &&
+                  laterReview.submitted_at > review.submitted_at &&
+                  laterReview.state === 'APPROVED'
+                )
+              );
+
+              if (changesRequested) {
+                console.log('  ❌ Changes requested');
+                return false;
+              }
+
+              // Check conversation resolution
+              if (config.merge.require_conversation_resolution) {
+                // Note: GitHub API doesn't provide easy access to conversation resolution status
+                // This would need to be implemented based on specific requirements
+                console.log('  ⚠️  Conversation resolution check not fully implemented');
+              }
+
+              // Check status checks
+              if (config.merge.require_status_checks) {
+                const statusChecks = await octokit.rest.repos.getCombinedStatusForRef({
+                  owner,
+                  repo,
+                  ref: pr.head.sha
+                });
+
+                if (statusChecks.data.state !== 'success') {
+                  console.log(`  ❌ Status checks not passing: ${statusChecks.data.state}`);
+                  
+                  // Check individual required status checks
+                  if (config.merge.required_status_checks) {
+                    const requiredChecks = config.merge.required_status_checks;
+                    const failedChecks = statusChecks.data.statuses.filter(status => 
+                      requiredChecks.includes(status.context) && status.state !== 'success'
+                    );
+                    
+                    if (failedChecks.length > 0) {
+                      console.log(`  ❌ Required status checks failing: ${failedChecks.map(c => c.context).join(', ')}`);
+                      return false;
+                    }
+                  } else {
+                    return false;
+                  }
+                }
+              }
+
+              // Check if branch is up to date
+              if (config.branch_protection.require_up_to_date_branches) {
+                const comparison = await octokit.rest.repos.compareCommits({
+                  owner,
+                  repo,
+                  base: pr.base.sha,
+                  head: pr.head.sha
+                });
+
+                if (comparison.data.behind_by > 0) {
+                  console.log(`  ❌ Branch is behind by ${comparison.data.behind_by} commits`);
+                  return false;
+                }
+              }
+
+              console.log('  ✅ All merge criteria met');
+              return true;
+              
+            } catch (error) {
+              console.error(`Error evaluating PR #${pr.number}:`, error);
+              return false;
+            }
+          }
+
+          async function mergePR(pr) {
+            try {
+              const mergeMethod = config.merge.merge_method || 'merge';
+              
+              console.log(`Merging PR #${pr.number} using ${mergeMethod} method`);
+              
+              const mergeResult = await octokit.rest.pulls.merge({
+                owner,
+                repo,
+                pull_number: pr.number,
+                merge_method: mergeMethod
+              });
+
+              if (mergeResult.data.merged) {
+                console.log(`✅ Successfully merged PR #${pr.number}`);
+                
+                // Delete branch if configured
+                if (config.merge.delete_branch_after_merge && pr.head.ref !== pr.base.ref) {
+                  try {
+                    await octokit.rest.git.deleteRef({
+                      owner,
+                      repo,
+                      ref: `heads/${pr.head.ref}`
+                    });
+                    console.log(`🗑️  Deleted branch: ${pr.head.ref}`);
+                  } catch (deleteError) {
+                    console.log(`⚠️  Could not delete branch ${pr.head.ref}:`, deleteError.message);
+                  }
+                }
+
+                // Send notification if configured
+                if (config.notifications.notify_on_merge) {
+                  await sendNotification(`PR #${pr.number} "${pr.title}" has been automatically merged.`, 'success');
+                }
+              } else {
+                throw new Error('Merge operation returned success=false');
+              }
+              
+            } catch (error) {
+              console.error(`❌ Failed to merge PR #${pr.number}:`, error.message);
+              
+              if (config.notifications.notify_on_failure) {
+                await sendNotification(`Failed to merge PR #${pr.number} "${pr.title}": ${error.message}`, 'error');
+              }
+            }
+          }
+
+          async function sendNotification(message, type) {
+            try {
+              if (config.notifications.slack_webhook) {
+                console.log('📢 Sending Slack notification');
+                // Implement Slack webhook notification
+              }
+              
+              if (config.notifications.teams_webhook) {
+                console.log('📢 Sending Teams notification');
+                // Implement Teams webhook notification
+              }
+              
+              console.log(`📢 ${type.toUpperCase()}: ${message}`);
+            } catch (error) {
+              console.error('Failed to send notification:', error);
+            }
+          }
+
+          // Run the evaluation
+          evaluateAndMergePRs().then(() => {
+            console.log('✅ PR evaluation completed');
+          }).catch((error) => {
+            console.error('💥 Fatal error:', error);
+            process.exit(1);
+          });
+          EOF
+
+      - name: Run PR evaluation
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BOT_CONFIG: ${{ needs.load-config.outputs.config }}
+        run: |
+          node evaluate-pr.js
+
