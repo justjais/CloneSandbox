@@ -295,7 +295,7 @@ jobs:
 
       - name: Create validation script
         run: |
-          cat > validate-config.js << 'EOF'
+          cat > validate-config.mjs << 'EOF'
           import yaml from 'js-yaml';
           import Ajv from 'ajv';
           import addFormats from 'ajv-formats';
@@ -388,7 +388,7 @@ jobs:
 
       - name: Validate configuration
         run: |
-          node validate-config.js
+          node validate-config.mjs
 
       - name: Check for sensitive file modifications
         run: |

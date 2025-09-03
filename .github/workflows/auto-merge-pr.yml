@@ -75,7 +75,7 @@ jobs:
           
       - name: Create PR evaluation script
         run: |
-          cat > evaluate-pr.js << 'EOF'
+          cat > evaluate-pr.mjs << 'EOF'
           import { Octokit } from '@octokit/rest';
           import yaml from 'js-yaml';
           import fs from 'fs';
@@ -378,5 +378,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOT_CONFIG: ${{ needs.load-config.outputs.config }}
         run: |
-          node evaluate-pr.js
+          node evaluate-pr.mjs
 

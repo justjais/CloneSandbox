@@ -82,7 +82,7 @@ jobs:
           
       - name: Create enhanced merge queue manager
         run: |
-          cat > enhanced-merge-queue.js << 'EOF'
+          cat > enhanced-merge-queue.mjs << 'EOF'
           import { Octokit } from '@octokit/rest';
           import yaml from 'js-yaml';
           import fs from 'fs';
@@ -528,7 +528,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOT_CONFIG: ${{ needs.load-config.outputs.config }}
         run: |
-          node enhanced-merge-queue.js
+          node enhanced-merge-queue.mjs
 
   # Fallback to original merge bot if queue is disabled
   fallback-merge:
