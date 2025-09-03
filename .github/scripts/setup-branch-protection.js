@@ -14,9 +14,9 @@
  *   GITHUB_REPOSITORY - Repository in format "owner/repo" (auto-set in GitHub Actions)
  */
 
-const { Octokit } = require('@octokit/rest');
-const yaml = require('js-yaml');
-const fs = require('fs');
+import { Octokit } from '@octokit/rest';
+import yaml from 'js-yaml';
+import fs from 'fs';
 
 async function setupBranchProtection() {
   try {
@@ -232,22 +232,12 @@ async function setupBranchProtection() {
 }
 
 // Check if running as main script
-if (require.main === module) {
-  // Install required packages if not available
-  try {
-    require('@octokit/rest');
-    require('js-yaml');
-  } catch (error) {
-    console.log('Installing required dependencies...');
-    const { execSync } = require('child_process');
-    execSync('npm install @octokit/rest js-yaml', { stdio: 'inherit' });
-  }
-  
+if (import.meta.url === `file://${process.argv[1]}`) {
   setupBranchProtection().catch(error => {
     console.error('💥 Setup failed:', error);
     process.exit(1);
   });
 }
 
-module.exports = { setupBranchProtection };
+export { setupBranchProtection };
 

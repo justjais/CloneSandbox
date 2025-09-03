@@ -70,15 +70,15 @@ jobs:
           
       - name: Install dependencies
         run: |
-          npm init -y
+          npm init -y --type=module
           npm install @octokit/rest js-yaml
           
       - name: Create PR evaluation script
         run: |
           cat > evaluate-pr.js << 'EOF'
-          const { Octokit } = require('@octokit/rest');
-          const yaml = require('js-yaml');
-          const fs = require('fs');
+          import { Octokit } from '@octokit/rest';
+          import yaml from 'js-yaml';
+          import fs from 'fs';
 
           const octokit = new Octokit({
             auth: process.env.GITHUB_TOKEN,

@@ -2,6 +2,7 @@
   "name": "pr-merge-bot-scripts",
   "version": "1.0.0",
   "description": "Node.js dependencies for PR merge bot scripts",
+  "type": "module",
   "private": true,
   "scripts": {
     "setup-protection": "node scripts/setup-branch-protection.js",
