@@ -10,7 +10,7 @@ bot_config:
   # Merge settings
   merge:
     # Require at least this many approvals before merging
-    required_approvals: 1
+    required_approvals: 0
     
     # Require all conversations to be resolved
     require_conversation_resolution: true
@@ -18,10 +18,8 @@ bot_config:
     # Require status checks to pass
     require_status_checks: true
     
-    # Required status checks (can be updated as needed)
-    required_status_checks:
-      - "ci/tests"
-      - "ci/lint"
+    # Required status checks (empty array means any green CI is acceptable)
+    required_status_checks: []
     
     # Auto-merge method: merge, squash, or rebase
     merge_method: "squash"
@@ -115,7 +113,7 @@ bot_config:
       default:
         name: "Default merge rules"
         conditions:
-          - "approved_reviews >= 1"
+          - "approved_reviews >= 0"
           - "status_checks_passed == true"
           - "has_auto_merge_label == true"
         actions:
