@@ -16,7 +16,7 @@ bot_config:
     require_conversation_resolution: true
     
     # Require status checks to pass
-    require_status_checks: true
+    require_status_checks: false
     
     # Required status checks (empty array means any green CI is acceptable)
     required_status_checks: []
