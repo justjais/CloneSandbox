@@ -400,7 +400,7 @@ bot_config:
     timezone: "UTC"
     
     # Minimum time PR must be open before auto-merge (minutes)
-    min_open_time_minutes: 30
+    min_open_time_minutes: 2
 
 # Version of this configuration (used for migration/compatibility)
 config_version: "1.0.0"
