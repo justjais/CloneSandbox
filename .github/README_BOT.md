@@ -61,7 +61,7 @@ bot_config:
 
 For complete setup instructions, troubleshooting, and advanced configuration:
 
-👉 **[Read the Complete Bot Documentation](/PR_MERGE_BOT.md)**
+👉 **[Read the Complete Bot Documentation](.github/PR_MERGE_BOT.md)**
 
 ## 🆘 Emergency Controls
 
